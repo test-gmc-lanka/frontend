@@ -1,0 +1,18 @@
+import api from './axios';
+
+export const getDashboard = () => api.get('/admin/dashboard');
+export const adminGetFeedback = () => api.get('/admin/feedback');
+export const adminGetComplaints = () => api.get('/admin/complaints');
+export const adminUpdateComplaintStatus = (id, status) =>
+  api.patch(`/admin/complaints/${id}/status`, null, { params: { status } });
+export const adminGetDesigns = () => api.get('/admin/custom-designs');
+export const adminUpdateDesignStatus = (id, status) =>
+  api.patch(`/admin/custom-designs/${id}/status`, null, { params: { status } });
+export const adminGetInvoices = () => api.get('/admin/invoices');
+export const adminGenerateInvoice = (orderId) =>
+  api.post(`/admin/invoices/orders/${orderId}`);
+export const adminGetMaintenance = () => api.get('/admin/maintenance');
+export const adminAssignMaintenance = (data) => api.post('/admin/maintenance', data);
+export const adminCreateCategory = (data) => api.post('/admin/categories', data);
+export const adminUpdateCategory = (id, data) => api.put(`/admin/categories/${id}`, data);
+export const adminDeleteCategory = (id) => api.delete(`/admin/categories/${id}`);
