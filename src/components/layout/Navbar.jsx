@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FiShoppingCart, FiUser } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { getCart } from '../../api/cart';
+import Avatar from '../common/Avatar';
 
 export default function Navbar({ onLoginClick, onRegisterClick }) {
   const { user, logout, isAdmin, isTechnician, cartVersion } = useAuth();
@@ -114,13 +115,16 @@ export default function Navbar({ onLoginClick, onRegisterClick }) {
                   onClick={() => setDropdownOpen(!dropdownOpen)}
                   style={{
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    width: 34, height: 34, borderRadius: '50%',
+                    width: 34, height: 34, borderRadius: '50%', padding: 0, overflow: 'hidden',
                     background: 'transparent', border: '1.5px solid var(--border-light)',
                     cursor: 'pointer', color: 'var(--text-secondary)',
                   }}
                   title={user.name}
+                  aria-label="Account menu"
                 >
-                  <FiUser size={18} />
+                  {user.profileImageUrl
+                    ? <Avatar src={user.profileImageUrl} name={user.name} size={31} />
+                    : <FiUser size={18} />}
                 </button>
 
                 {dropdownOpen && (

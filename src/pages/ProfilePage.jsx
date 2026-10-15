@@ -1,9 +1,13 @@
-import { useState, useEffect } from 'react';
-import { FiUser, FiLock, FiSave, FiPhone, FiMapPin } from 'react-icons/fi';
-import { getProfile, updateProfile, changePassword } from '../api/users';
+import { useState, useEffect, useRef } from 'react';
+import { FiUser, FiLock, FiSave, FiPhone, FiMapPin, FiCamera } from 'react-icons/fi';
+import { getProfile, updateProfile, changePassword, uploadAvatar, removeAvatar } from '../api/users';
 import { getErrorMessage } from '../utils/formatters';
+import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import Avatar from '../components/common/Avatar';
 import toast from 'react-hot-toast';
+
+const MAX_PHOTO_BYTES = 10 * 1024 * 1024; // matches spring.servlet.multipart.max-file-size
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
@@ -12,6 +16,9 @@ export default function ProfilePage() {
   const [profileForm, setProfileForm] = useState({ name: '', phone: '', address: '' });
   const [pwdForm, setPwdForm] = useState({ currentPassword: '', newPassword: '' });
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const fileInputRef = useRef(null);
+  const { updateUser } = useAuth();
 
   useEffect(() => {
     getProfile()
@@ -29,11 +36,48 @@ export default function ProfilePage() {
     try {
       const { data } = await updateProfile(profileForm);
       setProfile(data);
+      updateUser({ name: data.name });
       toast.success('Profile updated!');
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handlePhotoSelect = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > MAX_PHOTO_BYTES) {
+      toast.error('Photo must be 10 MB or smaller');
+      return;
+    }
+    setUploadingPhoto(true);
+    try {
+      const { data } = await uploadAvatar(file);
+      setProfile(data);
+      updateUser({ profileImageUrl: data.profileImageUrl });
+      toast.success('Profile photo updated!');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setUploadingPhoto(false);
+    }
+  };
+
+  const handleRemovePhoto = async () => {
+    if (!window.confirm('Remove your profile photo?')) return;
+    setUploadingPhoto(true);
+    try {
+      const { data } = await removeAvatar();
+      setProfile(data);
+      updateUser({ profileImageUrl: null });
+      toast.success('Profile photo removed');
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
@@ -62,13 +106,31 @@ export default function ProfilePage() {
 
         {/* Avatar */}
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.5rem' }}>
-          <div style={{
-            width: 64, height: 64, borderRadius: '50%',
-            background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '1.5rem', fontWeight: 700, color: '#fff', flexShrink: 0,
-          }}>
-            {profile?.name?.charAt(0).toUpperCase()}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <Avatar src={profile?.profileImageUrl} name={profile?.name} size={80} style={{ opacity: uploadingPhoto ? 0.5 : 1 }} />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploadingPhoto}
+              title={profile?.profileImageUrl ? 'Change photo' : 'Upload photo'}
+              aria-label={profile?.profileImageUrl ? 'Change profile photo' : 'Upload profile photo'}
+              style={{
+                position: 'absolute', right: -2, bottom: -2, width: 30, height: 30,
+                borderRadius: '50%', border: '2px solid var(--bg-secondary)',
+                background: 'var(--color-primary)', color: '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                cursor: uploadingPhoto ? 'wait' : 'pointer',
+              }}
+            >
+              <FiCamera size={14} />
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif"
+              onChange={handlePhotoSelect}
+              style={{ display: 'none' }}
+            />
           </div>
           <div>
             <div style={{ fontWeight: 700, fontSize: '1.125rem' }}>{profile?.name}</div>
@@ -76,6 +138,18 @@ export default function ProfilePage() {
             <span className={`badge badge-${profile?.role?.toLowerCase()}`} style={{ marginTop: '0.25rem', background: 'rgba(0,200,215,0.15)', color: 'var(--color-primary)' }}>
               {profile?.role}
             </span>
+            <div style={{ fontSize: '0.78rem', marginTop: '0.4rem', color: 'var(--text-muted)' }}>
+              {uploadingPhoto ? 'Uploading photo...' : (
+                <>
+                  <button type="button" onClick={() => fileInputRef.current?.click()} style={linkButtonStyle}>
+                    {profile?.profileImageUrl ? 'Change photo' : 'Upload photo'}
+                  </button>
+                  {profile?.profileImageUrl && (
+                    <> · <button type="button" onClick={handleRemovePhoto} style={{ ...linkButtonStyle, color: 'var(--danger)' }}>Remove photo</button></>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -176,6 +250,11 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+const linkButtonStyle = {
+  background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+  color: 'var(--color-primary)', fontSize: 'inherit', fontWeight: 600,
+};
 
 const iconStyle = {
   position: 'absolute', left: '0.875rem', top: '50%',

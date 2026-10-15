@@ -3,8 +3,12 @@ import { FiPlus, FiUserX, FiUserCheck, FiX } from 'react-icons/fi';
 import { adminGetUsers, adminCreateUser, adminDeactivateUser, adminActivateUser } from '../../api/users';
 import { getErrorMessage } from '../../utils/formatters';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
+import Pagination, { clampPage } from '../../components/common/Pagination';
+import Avatar from '../../components/common/Avatar';
 import toast from 'react-hot-toast';
 
+const PAGE_SIZE = 10;
 const emptyForm = { name: '', email: '', password: '', phone: '', address: '', role: 'CUSTOMER' };
 const ROLES = ['CUSTOMER', 'ADMIN', 'TECHNICIAN'];
 
@@ -13,10 +17,12 @@ export default function AdminUsers() {
   const [loading, setLoading] = useState(true);
   const [roleFilter, setRoleFilter] = useState('');
   const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [togglingId, setTogglingId] = useState(null);
+  const [confirmUser, setConfirmUser] = useState(null); // user awaiting activate/deactivate confirmation
 
   const fetchUsers = () =>
     adminGetUsers(roleFilter ? { role: roleFilter } : {})
@@ -24,7 +30,7 @@ export default function AdminUsers() {
       .catch(() => toast.error('Failed to load users'))
       .finally(() => setLoading(false));
 
-  useEffect(() => { setLoading(true); fetchUsers(); }, [roleFilter]);
+  useEffect(() => { setLoading(true); setPage(1); fetchUsers(); }, [roleFilter]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -42,7 +48,8 @@ export default function AdminUsers() {
     }
   };
 
-  const handleToggle = async (user) => {
+  const handleToggle = async () => {
+    const user = confirmUser;
     setTogglingId(user.userId);
     try {
       if (user.active) {
@@ -52,6 +59,7 @@ export default function AdminUsers() {
         await adminActivateUser(user.userId);
         toast.success(`${user.name} activated`);
       }
+      setConfirmUser(null);
       fetchUsers();
     } catch (err) {
       toast.error(getErrorMessage(err));
@@ -61,6 +69,8 @@ export default function AdminUsers() {
   };
 
   const filtered = users.filter((u) => !search || u.name.toLowerCase().includes(search.toLowerCase()) || u.email.toLowerCase().includes(search.toLowerCase()));
+  const safePage = clampPage(page, filtered.length, PAGE_SIZE);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   if (loading) return <LoadingSpinner />;
 
@@ -75,7 +85,7 @@ export default function AdminUsers() {
       </div>
 
       <div className="flex gap-3" style={{ marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <input className="form-input" style={{ maxWidth: 280 }} placeholder="Search by name or email..." value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input className="form-input" style={{ maxWidth: 280 }} placeholder="Search by name or email..." value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
         <div className="flex gap-2">
           <button className={`filter-chip ${!roleFilter ? 'active' : ''}`} onClick={() => setRoleFilter('')}>All</button>
           {ROLES.map((r) => (
@@ -97,13 +107,11 @@ export default function AdminUsers() {
             </tr>
           </thead>
           <tbody>
-            {filtered.map((u) => (
+            {paginated.map((u) => (
               <tr key={u.userId}>
                 <td>
                   <div className="flex items-center gap-2">
-                    <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, var(--color-primary), var(--color-secondary))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.75rem', fontWeight: 700, color: '#fff', flexShrink: 0 }}>
-                      {u.name?.charAt(0)}
-                    </div>
+                    <Avatar src={u.profileImageUrl} name={u.name} size={32} />
                     <span style={{ fontWeight: 500 }}>{u.name}</span>
                   </div>
                 </td>
@@ -120,7 +128,7 @@ export default function AdminUsers() {
                 <td>
                   <button
                     className={`btn btn-sm ${u.active ? 'btn-danger' : 'btn-secondary'}`}
-                    onClick={() => handleToggle(u)}
+                    onClick={() => setConfirmUser(u)}
                     disabled={togglingId === u.userId}
                   >
                     {u.active ? <><FiUserX size={13} /> Deactivate</> : <><FiUserCheck size={13} /> Activate</>}
@@ -131,7 +139,31 @@ export default function AdminUsers() {
           </tbody>
         </table>
         {filtered.length === 0 && <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No users found</div>}
+        <Pagination
+          page={safePage}
+          totalItems={filtered.length}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+          itemLabel="users"
+          style={{ borderTop: '1px solid var(--border)' }}
+        />
       </div>
+
+      {confirmUser && (
+        <ConfirmDialog
+          title={confirmUser.active ? 'Deactivate user?' : 'Activate user?'}
+          message={
+            confirmUser.active
+              ? <><strong>{confirmUser.name}</strong> ({confirmUser.email}) will no longer be able to sign in until reactivated.</>
+              : <><strong>{confirmUser.name}</strong> ({confirmUser.email}) will be able to sign in again.</>
+          }
+          confirmLabel={confirmUser.active ? 'Deactivate' : 'Activate'}
+          tone={confirmUser.active ? 'danger' : 'primary'}
+          loading={togglingId === confirmUser.userId}
+          onConfirm={handleToggle}
+          onCancel={() => setConfirmUser(null)}
+        />
+      )}
 
       {/* Create user modal */}
       {showForm && (

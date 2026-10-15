@@ -1,8 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import {
-  FiCalendar, FiArrowRight, FiChevronDown,
-  FiMail, FiPhone, FiMapPin, FiChevronLeft, FiChevronRight,
-} from 'react-icons/fi';
+import { FiCalendar, FiArrowRight, FiChevronDown, FiChevronLeft, FiChevronRight, FiVideo } from 'react-icons/fi';
 import {
   bookAppointment, getMyAppointments, cancelAppointment, rescheduleAppointment,
 } from '../api/appointments';
@@ -37,8 +34,9 @@ const CNC_IMAGE = 'https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?
 
 function statusInfo(status) {
   const map = {
-    PENDING:   { label: 'REQUESTED', bg: '#fff7ed', color: '#c2410c', border: '#fed7aa' },
-    CONFIRMED: { label: 'CONFIRMED', bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' },
+    PENDING:     { label: 'REQUESTED', bg: '#fff7ed', color: '#c2410c', border: '#fed7aa' },
+    APPROVED:    { label: 'APPROVED', bg: '#f0fdf4', color: '#15803d', border: '#bbf7d0' },
+    RESCHEDULED: { label: 'RESCHEDULED', bg: '#fffbeb', color: '#b45309', border: '#fde68a' },
     CANCELLED: { label: 'CANCELLED', bg: '#fef2f2', color: '#b91c1c', border: '#fecaca' },
     COMPLETED: { label: 'COMPLETED', bg: '#f9fafb', color: '#6b7280', border: '#e5e7eb' },
   };
@@ -311,7 +309,8 @@ export default function AppointmentPage() {
                 const ref = `GMC-${4800 + apt.appointmentId}`;
                 const title = parseTitle(apt.message);
                 const desc = parseDesc(apt.message);
-                const canAct = apt.status === 'PENDING' || apt.status === 'CONFIRMED';
+                // Same states the backend allows the customer to reschedule/cancel from
+                const canAct = ['PENDING', 'APPROVED', 'RESCHEDULED'].includes(apt.status);
 
                 return (
                   <div key={apt.appointmentId} style={{
@@ -339,6 +338,33 @@ export default function AppointmentPage() {
                       <FiCalendar size={13} color="#0f766e" />
                       <span>{formatApptCard(apt.date)}</span>
                     </div>
+
+                    {/* Online meeting link, shared by the admin on approval */}
+                    {apt.status === 'APPROVED' && apt.meetingLink && (
+                      <a
+                        href={apt.meetingLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                          background: '#0f766e', color: '#fff', borderRadius: 6, textDecoration: 'none',
+                          padding: '0.45rem 0.6rem', fontSize: '0.78rem', fontWeight: 600,
+                        }}
+                      >
+                        <FiVideo size={14} /> Join meeting
+                      </a>
+                    )}
+
+                    {/* Latest note from GMC Lanka */}
+                    {apt.adminNote && (
+                      <div style={{
+                        background: '#f0fdfa', borderLeft: '3px solid #0f766e', borderRadius: '0 6px 6px 0',
+                        padding: '0.45rem 0.6rem', fontSize: '0.78rem', color: '#374151', lineHeight: 1.45,
+                      }}>
+                        <div style={{ fontWeight: 700, color: '#0f766e', fontSize: '0.7rem', marginBottom: 2 }}>Note from GMC Lanka</div>
+                        <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{apt.adminNote}</div>
+                      </div>
+                    )}
 
                     {/* Actions */}
                     {canAct && (
@@ -389,43 +415,6 @@ export default function AppointmentPage() {
         )}
       </div>
 
-      {/* Footer */}
-      <footer style={{ background: '#fff', borderTop: '1px solid #e5e7eb', padding: '3rem 1.5rem 1.5rem', marginTop: '3rem' }}>
-        <div style={{ maxWidth: 1060, margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem', marginBottom: '2rem' }}>
-            <div>
-              <div style={footerHeading}>QUICK LINKS</div>
-              {['About Us', 'Our Services', 'CNC Machines', 'Wood Portfolio'].map((t) => (
-                <div key={t} style={{ marginBottom: '0.5rem' }}><a href="#" style={footerLink}>{t}</a></div>
-              ))}
-            </div>
-            <div>
-              <div style={footerHeading}>CONTACT</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <FiMail size={14} color="#6b7280" /><span style={footerLink}>contact@cnclanka.com</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <FiPhone size={14} color="#6b7280" /><span style={footerLink}>+94 11 234 5678</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <FiMapPin size={14} color="#6b7280" style={{ marginTop: 2 }} />
-                  <span style={footerLink}>123 Industrial Zone,<br />Colombo, Sri Lanka</span>
-                </div>
-              </div>
-            </div>
-            <div>
-              <div style={footerHeading}>LEGAL</div>
-              {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map((t) => (
-                <div key={t} style={{ marginBottom: '0.5rem' }}><a href="#" style={footerLink}>{t}</a></div>
-              ))}
-            </div>
-          </div>
-          <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1.25rem', fontSize: '0.8rem', color: '#9ca3af' }}>
-            &copy; 2024 CNC Lanka. Engineered for Excellence.
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
@@ -469,9 +458,3 @@ const smallBtnDanger = {
   flex: 1, padding: '0.35rem 0.5rem', fontSize: '0.75rem', fontWeight: 600,
   background: '#fff', color: '#ef4444', border: '1px solid #fecaca', borderRadius: 6, cursor: 'pointer',
 };
-
-const footerHeading = {
-  fontSize: '0.72rem', fontWeight: 700, color: '#111827',
-  letterSpacing: '0.08em', marginBottom: '0.875rem',
-};
-const footerLink = { fontSize: '0.85rem', color: '#6b7280', textDecoration: 'none', lineHeight: 1.5 };

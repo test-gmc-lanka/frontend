@@ -1,16 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiTrash2, FiShoppingCart, FiArrowRight, FiMail, FiPhone, FiMapPin, FiInfo } from 'react-icons/fi';
+import { FiTrash2, FiShoppingCart, FiArrowRight, FiInfo } from 'react-icons/fi';
 import { getCart, updateCartItem, removeCartItem, clearCart } from '../api/cart';
 import { placeOrder } from '../api/orders';
 import { formatLKR, getErrorMessage } from '../utils/formatters';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 
 const TAX_RATE = 0.15;
 
 export default function CartPage() {
   const navigate = useNavigate();
+  const { refreshCart } = useAuth();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
   const [placingOrder, setPlacingOrder] = useState(false);
@@ -34,6 +36,7 @@ export default function CartPage() {
     try {
       const { data } = await removeCartItem(itemId);
       setCart(data);
+      refreshCart();
       toast.success('Item removed');
     } catch (err) { toast.error(getErrorMessage(err)); }
   };
@@ -43,6 +46,7 @@ export default function CartPage() {
     try {
       await clearCart();
       setCart((c) => ({ ...c, items: [], totalAmount: 0 }));
+      refreshCart();
       toast.success('Cart cleared');
     } catch (err) { toast.error(getErrorMessage(err)); }
   };
@@ -51,6 +55,7 @@ export default function CartPage() {
     setPlacingOrder(true);
     try {
       const { data } = await placeOrder({ orderType: 'B2C', notes: '' });
+      refreshCart(); // the backend empties the cart when an order is placed
       toast.success('Order placed successfully!');
       navigate(`/orders/${data.orderId}`);
     } catch (err) {
@@ -237,50 +242,6 @@ export default function CartPage() {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer style={{ background: '#fff', borderTop: '1px solid #e5e7eb', marginTop: '2rem', padding: '3rem 1.5rem 1.5rem' }}>
-        <div style={{ maxWidth: 1060, margin: '0 auto' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2rem', marginBottom: '2rem' }}>
-            {/* Quick Links */}
-            <div>
-              <div style={footerHeading}>QUICK LINKS</div>
-              {['About Us', 'Our Services', 'CNC Machines', 'Wood Portfolio'].map((t) => (
-                <div key={t} style={{ marginBottom: '0.5rem' }}>
-                  <a href="#" style={footerLink}>{t}</a>
-                </div>
-              ))}
-            </div>
-            {/* Contact */}
-            <div>
-              <div style={footerHeading}>CONTACT</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <FiMail size={14} color="#6b7280" /><span style={footerLink}>contact@cnclanka.com</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <FiPhone size={14} color="#6b7280" /><span style={footerLink}>+94 11 234 5678</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <FiMapPin size={14} color="#6b7280" style={{ marginTop: 2 }} />
-                  <span style={footerLink}>123 Industrial Zone,<br />Colombo, Sri Lanka</span>
-                </div>
-              </div>
-            </div>
-            {/* Legal */}
-            <div>
-              <div style={footerHeading}>LEGAL</div>
-              {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map((t) => (
-                <div key={t} style={{ marginBottom: '0.5rem' }}>
-                  <a href="#" style={footerLink}>{t}</a>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div style={{ borderTop: '1px solid #f3f4f6', paddingTop: '1.25rem', fontSize: '0.8rem', color: '#9ca3af' }}>
-            &copy; 2024 CNC Lanka. Engineered for Excellence.
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
@@ -293,5 +254,3 @@ const qtyBtnStyle = {
 const summaryRowStyle = { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' };
 const summaryLabel = { fontSize: '0.85rem', color: '#6b7280' };
 const summaryValue = { fontSize: '0.85rem', color: '#111827', fontWeight: 500 };
-const footerHeading = { fontSize: '0.72rem', fontWeight: 700, color: '#111827', letterSpacing: '0.08em', marginBottom: '0.875rem' };
-const footerLink = { fontSize: '0.85rem', color: '#6b7280', textDecoration: 'none', lineHeight: 1.5 };

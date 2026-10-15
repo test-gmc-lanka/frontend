@@ -6,6 +6,8 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import LoginModal from './components/auth/LoginModal';
 import RegisterModal from './components/auth/RegisterModal';
+import ForgotPasswordModal from './components/auth/ForgotPasswordModal';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import HomePage from './pages/HomePage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CartPage from './pages/CartPage';
@@ -43,7 +45,14 @@ function AppRoutes() {
       <Navbar onLoginClick={openLogin} onRegisterClick={openRegister} />
 
       {modal === 'login' && (
-        <LoginModal onClose={closeModal} onSwitchToRegister={() => setModal('register')} />
+        <LoginModal
+          onClose={closeModal}
+          onSwitchToRegister={() => setModal('register')}
+          onForgotPassword={() => setModal('forgot')}
+        />
+      )}
+      {modal === 'forgot' && (
+        <ForgotPasswordModal onClose={closeModal} onBackToLogin={() => setModal('login')} />
       )}
       {modal === 'register' && (
         <RegisterModal onClose={closeModal} onSwitchToLogin={() => setModal('login')} />
@@ -53,6 +62,7 @@ function AppRoutes() {
         {/* Public */}
         <Route path="/" element={<HomePage onLoginClick={openLogin} />} />
         <Route path="/products/:id" element={<ProductDetailPage onLoginClick={openLogin} />} />
+        <Route path="/reset-password" element={<ResetPasswordPage onLoginClick={openLogin} onForgotPassword={() => setModal('forgot')} />} />
 
         {/* Customer routes */}
         <Route path="/cart" element={<ProtectedRoute allowedRoles={['CUSTOMER']}><CartPage /></ProtectedRoute>} />

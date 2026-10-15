@@ -7,7 +7,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'http://localhost:8081',
+        target: 'http://localhost:8080',
         changeOrigin: true,
         secure: false,
         configure: (proxy) => {
@@ -15,6 +15,10 @@ export default defineConfig({
             console.log('\n[proxy error] Backend not reachable:', err.message);
           });
         },
+      },
+      '/uploads': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
       },
     },
   },

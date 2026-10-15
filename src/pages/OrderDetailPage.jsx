@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  FiArrowLeft, FiCheck, FiPrinter, FiHeadphones,
-  FiMail, FiPhone, FiMapPin,
-} from 'react-icons/fi';
+import { FiArrowLeft, FiCheck, FiPrinter, FiHeadphones } from 'react-icons/fi';
 import { getOrder } from '../api/orders';
 import { formatLKR, formatDate } from '../utils/formatters';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -260,39 +257,6 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      {/* ── Footer ────────────────────────────────────────────────────────── */}
-      <div style={{ borderTop: '1px solid #d1d5db', background: '#eef2f7', marginTop: '2rem' }}>
-        <div style={{ maxWidth: 760, margin: '0 auto', padding: '3rem 1.5rem 2rem', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2.5rem' }}>
-          <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em', color: '#9ca3af', marginBottom: '1rem' }}>QUICK LINKS</div>
-            {['About Us', 'Our Services', 'CNC Machines', 'Wood Portfolio'].map((l) => (
-              <div key={l} style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.6rem', cursor: 'pointer' }}>{l}</div>
-            ))}
-          </div>
-          <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em', color: '#9ca3af', marginBottom: '1rem' }}>CONTACT</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', fontSize: '0.875rem', color: '#4b5563' }}>
-              <FiMail size={14} color="#6b7280" /> contact@cnclanka.com
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', fontSize: '0.875rem', color: '#4b5563' }}>
-              <FiPhone size={14} color="#6b7280" /> +94 11 234 5678
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.875rem', color: '#4b5563' }}>
-              <FiMapPin size={14} color="#6b7280" style={{ marginTop: 2, flexShrink: 0 }} />
-              <span>123 Industrial Zone,<br />Colombo, Sri Lanka</span>
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em', color: '#9ca3af', marginBottom: '1rem' }}>LEGAL</div>
-            {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map((l) => (
-              <div key={l} style={{ fontSize: '0.875rem', color: '#4b5563', marginBottom: '0.6rem', cursor: 'pointer' }}>{l}</div>
-            ))}
-          </div>
-        </div>
-        <div style={{ borderTop: '1px solid #d1d5db', padding: '1rem 1.5rem', maxWidth: 760, margin: '0 auto' }}>
-          <span style={{ fontSize: '0.8rem', color: '#9ca3af' }}>© 2024 GMC Lanka. Engineered for Excellence.</span>
-        </div>
-      </div>
     </div>
   );
 }

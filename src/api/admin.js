@@ -16,3 +16,10 @@ export const adminAssignMaintenance = (data) => api.post('/admin/maintenance', d
 export const adminCreateCategory = (data) => api.post('/admin/categories', data);
 export const adminUpdateCategory = (id, data) => api.put(`/admin/categories/${id}`, data);
 export const adminDeleteCategory = (id) => api.delete(`/admin/categories/${id}`);
+export const adminUploadMaintenanceImages = (files) => {
+  const formData = new FormData();
+  files.forEach((file) => formData.append('files', file));
+  return api.post('/admin/maintenance/images', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};

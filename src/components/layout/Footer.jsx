@@ -18,7 +18,7 @@ export default function Footer() {
           {/* Contact */}
           <div className="footer-col">
             <h4>Contact</h4>
-            <div className="footer-contact-item"><FiMail size={16} /> <span>contact@cnclanka.com</span></div>
+            <div className="footer-contact-item"><FiMail size={16} /> <span>contact@gmclanka.com</span></div>
             <div className="footer-contact-item"><FiPhone size={16} /> <span>+94 11 234 5678</span></div>
             <div className="footer-contact-item"><FiMapPin size={16} /> <span>123 Industrial Zone,<br />Colombo, Sri Lanka</span></div>
           </div>

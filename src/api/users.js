@@ -10,3 +10,11 @@ export const adminGetUsers = (params) => api.get('/admin/users', { params });
 export const adminCreateUser = (data) => api.post('/admin/users', data);
 export const adminDeactivateUser = (id) => api.patch(`/admin/users/${id}/deactivate`);
 export const adminActivateUser = (id) => api.patch(`/admin/users/${id}/activate`);
+export const uploadAvatar = (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return api.post('/users/me/avatar', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};
+export const removeAvatar = () => api.delete('/users/me/avatar');

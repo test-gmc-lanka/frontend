@@ -5,7 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getErrorMessage } from '../../utils/formatters';
 import toast from 'react-hot-toast';
 
-export default function LoginModal({ onClose, onSwitchToRegister }) {
+export default function LoginModal({ onClose, onSwitchToRegister, onForgotPassword }) {
   const { login } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
@@ -125,6 +125,7 @@ export default function LoginModal({ onClose, onSwitchToRegister }) {
           <div style={{ textAlign: 'right', marginBottom: '1.5rem' }}>
             <button
               type="button"
+              onClick={onForgotPassword}
               style={{
                 background: 'none', border: 'none',
                 color: '#0e7490', fontSize: '0.75rem',

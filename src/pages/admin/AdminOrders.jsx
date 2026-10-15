@@ -3,6 +3,7 @@ import { FiChevronLeft, FiChevronRight, FiChevronDown } from 'react-icons/fi';
 import { adminGetOrders, adminUpdateOrderStatus } from '../../api/orders';
 import { formatLKR, formatDate, getErrorMessage } from '../../utils/formatters';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import toast from 'react-hot-toast';
 
 /* Map backend statuses to the 4-step display */
@@ -17,6 +18,10 @@ const STATUS_ORDER = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED'];
 
 function statusIndex(backend) {
   return STATUS_ORDER.indexOf(backend);
+}
+
+function stepLabel(backend) {
+  return STEPS.find((s) => s.backend === backend)?.label || backend;
 }
 
 function StatusBadge({ status }) {
@@ -97,6 +102,7 @@ export default function AdminOrders() {
   const [pageSize, setPageSize] = useState(5);
   const [page, setPage] = useState(1);
   const [updatingId, setUpdatingId] = useState(null);
+  const [pendingChange, setPendingChange] = useState(null); // { order, status } awaiting confirmation
 
   const fetchOrders = (sf) =>
     adminGetOrders(sf ? { status: sf } : {})
@@ -106,12 +112,19 @@ export default function AdminOrders() {
 
   useEffect(() => { setLoading(true); setPage(1); fetchOrders(statusFilter); }, [statusFilter]);
 
-  const handleStatusChange = async (orderId, status) => {
-    setUpdatingId(orderId);
+  const requestStatusChange = (orderId, status) => {
+    const order = orders.find((o) => o.orderId === orderId);
+    if (order) setPendingChange({ order, status });
+  };
+
+  const handleStatusChange = async () => {
+    const { order, status } = pendingChange;
+    setUpdatingId(order.orderId);
     try {
-      const { data } = await adminUpdateOrderStatus(orderId, status);
-      setOrders((prev) => prev.map((o) => (o.orderId === orderId ? data : o)));
+      const { data } = await adminUpdateOrderStatus(order.orderId, status);
+      setOrders((prev) => prev.map((o) => (o.orderId === order.orderId ? data : o)));
       toast.success('Status updated!');
+      setPendingChange(null);
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -243,7 +256,7 @@ export default function AdminOrders() {
             {/* Status step buttons */}
             <StepButtons
               order={order}
-              onStatusChange={handleStatusChange}
+              onStatusChange={requestStatusChange}
               updating={updatingId === order.orderId}
             />
           </div>
@@ -266,6 +279,31 @@ export default function AdminOrders() {
           </PagBtn>
         </div>
       )}
+
+      {pendingChange && (() => {
+        const { order, status } = pendingChange;
+        const goingBack = statusIndex(status) < statusIndex(order.status);
+        const isFinal = status === 'DELIVERED';
+        return (
+          <ConfirmDialog
+            title="Change order status?"
+            message={
+              <>
+                Order <strong>#GMC-{1000 + order.orderId}</strong> ({order.userName}) will move from{' '}
+                <strong>{stepLabel(order.status)}</strong> to <strong>{stepLabel(status)}</strong>.
+                The customer will be notified.
+                {goingBack && <div style={{ marginTop: 8, color: '#b45309' }}>This moves the order back to an earlier step.</div>}
+                {isFinal && <div style={{ marginTop: 8, color: '#b45309' }}>Delivered is final — the status can't be changed afterwards.</div>}
+              </>
+            }
+            confirmLabel={`Mark as ${stepLabel(status)}`}
+            tone={goingBack || isFinal ? 'warning' : 'primary'}
+            loading={updatingId === order.orderId}
+            onConfirm={handleStatusChange}
+            onCancel={() => setPendingChange(null)}
+          />
+        );
+      })()}
 
       {/* Footer */}
       <footer style={{

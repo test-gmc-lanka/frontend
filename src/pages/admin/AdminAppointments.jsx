@@ -1,26 +1,60 @@
 import { useState, useEffect, useMemo } from 'react';
-import { FiCalendar, FiMapPin, FiUser, FiSearch, FiChevronDown, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
-import { adminGetAppointments, adminUpdateAppointmentStatus } from '../../api/appointments';
+import { FiCalendar, FiMapPin, FiUser, FiSearch, FiChevronDown, FiVideo } from 'react-icons/fi';
+import { adminGetAppointments, adminUpdateAppointmentStatus, adminRescheduleAppointment } from '../../api/appointments';
 import { getErrorMessage } from '../../utils/formatters';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
+import Pagination, { clampPage } from '../../components/common/Pagination';
 import toast from 'react-hot-toast';
 
 const PAGE_SIZES = [3, 5, 10];
 
-/* Backend statuses available */
-const APT_STATUSES = ['PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED'];
+/* Must match the backend AppointmentStatus enum */
+const APT_STATUSES = ['PENDING', 'APPROVED', 'RESCHEDULED', 'CANCELLED', 'COMPLETED'];
 
 function statusLabel(status) {
-  const map = { PENDING: 'REQUESTED', CONFIRMED: 'CONFIRMED', CANCELLED: 'CANCELLED', COMPLETED: 'COMPLETED' };
+  const map = { PENDING: 'REQUESTED', APPROVED: 'APPROVED', RESCHEDULED: 'RESCHEDULED', CANCELLED: 'CANCELLED', COMPLETED: 'COMPLETED' };
   return map[status] || status;
+}
+
+/* Confirmation text for each admin action */
+const ACTIONS = {
+  APPROVED:   { title: 'Approve appointment?', verb: 'approve', confirmLabel: 'Approve', tone: 'primary' },
+  RESCHEDULE: { title: 'Reschedule appointment', verb: 'reschedule', confirmLabel: 'Reschedule', tone: 'warning' },
+  CANCELLED:  { title: 'Cancel appointment?', verb: 'cancel', confirmLabel: 'Cancel Appointment', tone: 'danger' },
+  COMPLETED:  { title: 'Mark as completed?', verb: 'mark as completed', confirmLabel: 'Mark Completed', tone: 'primary' },
+};
+
+const NOTE_PLACEHOLDERS = {
+  APPROVED: 'e.g. Please join 5 minutes early and keep your drawings ready.',
+  RESCHEDULE: 'e.g. Our technician is unavailable at the original time.',
+  CANCELLED: 'e.g. Sorry, we are unable to take this request right now.',
+  COMPLETED: 'e.g. Thanks for meeting with us! We will send the quotation soon.',
+};
+
+/* Mirrors the backend rule: only full http(s) links are accepted */
+function isHttpUrl(value) {
+  try {
+    const url = new URL(value);
+    return (url.protocol === 'http:' || url.protocol === 'https:') && !!url.hostname;
+  } catch {
+    return false;
+  }
+}
+
+/* "YYYY-MM-DDTHH:MM" in local time, the format <input type="datetime-local"> uses */
+function toLocalInputValue(date) {
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 function StatusBadge({ status }) {
   const styles = {
-    PENDING:   { bg: '#1e3a5c', color: '#fff' },
-    CONFIRMED: { bg: '#0f766e', color: '#fff' },
-    CANCELLED: { bg: '#ef4444', color: '#fff' },
-    COMPLETED: { bg: '#6b7280', color: '#fff' },
+    PENDING:     { bg: '#1e3a5c', color: '#fff' },
+    APPROVED:    { bg: '#0f766e', color: '#fff' },
+    RESCHEDULED: { bg: '#f59e0b', color: '#fff' },
+    CANCELLED:   { bg: '#ef4444', color: '#fff' },
+    COMPLETED:   { bg: '#6b7280', color: '#fff' },
   };
   const s = styles[status] || { bg: '#e5e7eb', color: '#374151' };
   return (
@@ -37,10 +71,7 @@ function StatusBadge({ status }) {
 /* Format date as "YYYY-MM-DD  HH:MM" */
 function formatApptDate(dateStr) {
   if (!dateStr) return '-';
-  const d = new Date(dateStr);
-  const date = d.toISOString().slice(0, 10);
-  const time = d.toTimeString().slice(0, 5);
-  return `${date}  ${time}`;
+  return toLocalInputValue(new Date(dateStr)).replace('T', '  ');
 }
 
 /* Derive a short title from the first sentence of the message */
@@ -58,6 +89,10 @@ export default function AdminAppointments() {
   const [page, setPage] = useState(1);
   const [pendingFilter, setPendingFilter] = useState({ status: '', pageSize: 5 });
   const [updatingId, setUpdatingId] = useState(null);
+  const [pendingAction, setPendingAction] = useState(null); // { appointment, action } awaiting confirmation
+  const [newDate, setNewDate] = useState('');
+  const [meetingLink, setMeetingLink] = useState('');
+  const [note, setNote] = useState('');
 
   const fetchAppointments = (sf) =>
     adminGetAppointments(sf ? { status: sf } : {})
@@ -75,12 +110,28 @@ export default function AdminAppointments() {
     fetchAppointments(pendingFilter.status);
   };
 
-  const handleStatusChange = async (id, status) => {
+  const requestAction = (appointment, action) => {
+    setNewDate(action === 'RESCHEDULE' && appointment.date ? toLocalInputValue(new Date(appointment.date)) : '');
+    setMeetingLink(action === 'APPROVED' ? (appointment.meetingLink || '') : '');
+    setNote('');
+    setPendingAction({ appointment, action });
+  };
+
+  const handleConfirmAction = async () => {
+    const { appointment, action } = pendingAction;
+    const id = appointment.appointmentId;
     setUpdatingId(id);
     try {
-      const { data } = await adminUpdateAppointmentStatus(id, status);
+      const trimmedNote = note.trim() || null;
+      const { data } = action === 'RESCHEDULE'
+        ? await adminRescheduleAppointment(id, newDate, trimmedNote)
+        : await adminUpdateAppointmentStatus(id, action, {
+          note: trimmedNote,
+          meetingLink: action === 'APPROVED' ? (meetingLink.trim() || null) : undefined,
+        });
       setAppointments((prev) => prev.map((a) => (a.appointmentId === id ? data : a)));
       toast.success('Appointment updated!');
+      setPendingAction(null);
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -88,13 +139,15 @@ export default function AdminAppointments() {
     }
   };
 
-  const totalPages = Math.max(1, Math.ceil(appointments.length / pageSize));
-  const safePage = Math.min(page, totalPages);
+  const minDate = toLocalInputValue(new Date());
+  const newDateInvalid = !newDate || newDate <= minDate;
+  const meetingLinkInvalid = meetingLink.trim() !== '' && !isHttpUrl(meetingLink.trim());
+
+  const safePage = clampPage(page, appointments.length, pageSize);
   const paginated = useMemo(
     () => appointments.slice((safePage - 1) * pageSize, safePage * pageSize),
     [appointments, safePage, pageSize]
   );
-  const pageNums = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   if (loading) return <LoadingSpinner />;
 
@@ -208,11 +261,13 @@ export default function AdminAppointments() {
                     </div>
                     <div style={infoBoxStyle}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <FiMapPin size={16} color="#6b7280" />
+                        {a.meetingLink ? <FiVideo size={16} color="#6b7280" /> : <FiMapPin size={16} color="#6b7280" />}
                         <span style={{ fontSize: '0.72rem', color: '#9ca3af', fontWeight: 500 }}>Meeting Type</span>
                       </div>
-                      <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#111827', marginTop: 4 }}>
-                        In-person
+                      <div style={{ fontWeight: 600, fontSize: '0.88rem', color: '#111827', marginTop: 4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {a.meetingLink ? (
+                          <>Online · <a href={a.meetingLink} target="_blank" rel="noopener noreferrer" style={{ color: '#0f766e' }}>{a.meetingLink}</a></>
+                        ) : 'In-person'}
                       </div>
                     </div>
                   </div>
@@ -227,6 +282,16 @@ export default function AdminAppointments() {
                       &ldquo;{a.message}&rdquo;
                     </p>
                   </div>
+
+                  {a.adminNote && (
+                    <div style={{
+                      background: '#f0fdfa', borderLeft: '3px solid #0f766e',
+                      borderRadius: '0 6px 6px 0', padding: '0.65rem 0.875rem', marginTop: '0.6rem',
+                    }}>
+                      <div style={{ fontSize: '0.72rem', color: '#0f766e', fontWeight: 600, marginBottom: 4 }}>Your note to the customer</div>
+                      <p style={{ color: '#374151', fontSize: '0.875rem', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{a.adminNote}</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Right: action buttons */}
@@ -235,26 +300,34 @@ export default function AdminAppointments() {
                   padding: '1.25rem 1.25rem 1.25rem 0',
                   justifyContent: 'center', flexShrink: 0, minWidth: 150,
                 }}>
+                  {/* Enabled states mirror the backend's allowed transitions */}
                   <ActionBtn
                     color="#22c55e"
-                    disabled={isTerminal || isUpdating || a.status === 'CONFIRMED'}
-                    onClick={() => handleStatusChange(a.appointmentId, 'CONFIRMED')}
+                    disabled={isUpdating || !['PENDING', 'RESCHEDULED'].includes(a.status)}
+                    onClick={() => requestAction(a, 'APPROVED')}
                   >
-                    APPROVED
+                    APPROVE
                   </ActionBtn>
                   <ActionBtn
                     color="#f59e0b"
                     disabled={isTerminal || isUpdating}
-                    onClick={() => handleStatusChange(a.appointmentId, 'PENDING')}
+                    onClick={() => requestAction(a, 'RESCHEDULE')}
                   >
-                    RESCHEDULED
+                    RESCHEDULE
+                  </ActionBtn>
+                  <ActionBtn
+                    color="#0f766e"
+                    disabled={isUpdating || a.status !== 'APPROVED'}
+                    onClick={() => requestAction(a, 'COMPLETED')}
+                  >
+                    COMPLETE
                   </ActionBtn>
                   <ActionBtn
                     color="#ef4444"
-                    disabled={isTerminal || isUpdating || a.status === 'CANCELLED'}
-                    onClick={() => handleStatusChange(a.appointmentId, 'CANCELLED')}
+                    disabled={isTerminal || isUpdating}
+                    onClick={() => requestAction(a, 'CANCELLED')}
                   >
-                    CANCELLED
+                    CANCEL
                   </ActionBtn>
                 </div>
               </div>
@@ -264,19 +337,99 @@ export default function AdminAppointments() {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: '2rem' }}>
-          <PagBtn onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage === 1}>
-            <FiChevronLeft size={15} />
-          </PagBtn>
-          {pageNums.map((n) => (
-            <PagBtn key={n} active={n === safePage} onClick={() => setPage(n)}>{n}</PagBtn>
-          ))}
-          <PagBtn onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}>
-            <FiChevronRight size={15} />
-          </PagBtn>
-        </div>
-      )}
+      <div style={{ maxWidth: 960, margin: '1.5rem auto 0', padding: '0 2rem' }}>
+        <Pagination
+          page={safePage}
+          totalItems={appointments.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          itemLabel="appointments"
+          style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12 }}
+        />
+      </div>
+
+      {pendingAction && (() => {
+        const { appointment: a, action } = pendingAction;
+        const cfg = ACTIONS[action];
+        const isReschedule = action === 'RESCHEDULE';
+        return (
+          <ConfirmDialog
+            title={cfg.title}
+            message={
+              isReschedule
+                ? <>Pick a new date and time for <strong>{a.userName}</strong>&rsquo;s appointment (currently {formatApptDate(a.date)}). The customer will be notified.</>
+                : <>Are you sure you want to {cfg.verb} <strong>{a.userName}</strong>&rsquo;s appointment on <strong>{formatApptDate(a.date)}</strong>? The customer will be notified.</>
+            }
+            confirmLabel={cfg.confirmLabel}
+            cancelLabel="Back"
+            tone={cfg.tone}
+            loading={updatingId === a.appointmentId}
+            confirmDisabled={(isReschedule && newDateInvalid) || (action === 'APPROVED' && meetingLinkInvalid)}
+            onConfirm={handleConfirmAction}
+            onCancel={() => setPendingAction(null)}
+          >
+            {action === 'APPROVED' && (
+              <div style={{ marginBottom: '0.85rem' }}>
+                <label htmlFor="meeting-link" style={dialogLabelStyle}>
+                  Meeting link <span style={{ fontWeight: 400, color: '#9ca3af' }}>(optional — leave empty for in-person)</span>
+                </label>
+                <input
+                  id="meeting-link"
+                  type="url"
+                  value={meetingLink}
+                  onChange={(e) => setMeetingLink(e.target.value)}
+                  placeholder="https://meet.google.com/abc-defg-hij"
+                  style={dialogInputStyle}
+                />
+                {meetingLinkInvalid ? (
+                  <div style={{ color: '#dc2626', fontSize: '0.75rem', marginTop: 4 }}>Enter a full link starting with https://</div>
+                ) : (
+                  <div style={{ color: '#6b7280', fontSize: '0.75rem', marginTop: 4 }}>
+                    Create a meeting at{' '}
+                    <a href="https://meet.google.com/new" target="_blank" rel="noopener noreferrer" style={{ color: '#0f766e' }}>meet.google.com/new</a>
+                    {' '}and paste the link here.
+                  </div>
+                )}
+              </div>
+            )}
+            {isReschedule && (
+              <div>
+                <label htmlFor="reschedule-date" style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 5 }}>
+                  New date &amp; time
+                </label>
+                <input
+                  id="reschedule-date"
+                  type="datetime-local"
+                  value={newDate}
+                  min={minDate}
+                  onChange={(e) => setNewDate(e.target.value)}
+                  style={{
+                    width: '100%', padding: '0.55rem 0.75rem', border: '1px solid #d1d5db',
+                    borderRadius: 7, fontSize: '0.875rem', color: '#111827', boxSizing: 'border-box',
+                  }}
+                />
+                {newDate && newDateInvalid && (
+                  <div style={{ color: '#dc2626', fontSize: '0.75rem', marginTop: 4 }}>The new time must be in the future.</div>
+                )}
+              </div>
+            )}
+            <div style={{ marginTop: isReschedule ? '0.85rem' : 0 }}>
+              <label htmlFor="admin-note" style={dialogLabelStyle}>
+                Note to customer <span style={{ fontWeight: 400, color: '#9ca3af' }}>(optional)</span>
+              </label>
+              <textarea
+                id="admin-note"
+                rows={3}
+                maxLength={1000}
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder={NOTE_PLACEHOLDERS[action]}
+                style={{ ...dialogInputStyle, resize: 'vertical' }}
+              />
+            </div>
+          </ConfirmDialog>
+        );
+      })()}
 
       {/* Footer */}
       <footer style={{
@@ -325,26 +478,6 @@ function ActionBtn({ children, color, onClick, disabled }) {
   );
 }
 
-function PagBtn({ children, onClick, disabled, active }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        width: 36, height: 36, borderRadius: 8,
-        border: active ? 'none' : '1px solid #e5e7eb',
-        background: active ? '#0f766e' : '#fff',
-        color: active ? '#fff' : disabled ? '#d1d5db' : '#374151',
-        fontWeight: active ? 700 : 500, fontSize: '0.875rem',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
 const filterLabelStyle = {
   fontSize: '0.7rem', fontWeight: 700, color: '#9ca3af',
   letterSpacing: '0.07em', marginBottom: 4,
@@ -367,4 +500,14 @@ const chevronStyle = {
 const infoBoxStyle = {
   background: '#f9fafb', border: '1px solid #f3f4f6',
   borderRadius: 8, padding: '0.6rem 0.875rem', flex: 1,
+};
+
+const dialogLabelStyle = {
+  display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#374151', marginBottom: 5,
+};
+
+const dialogInputStyle = {
+  width: '100%', padding: '0.55rem 0.75rem', border: '1px solid #d1d5db',
+  borderRadius: 7, fontSize: '0.875rem', color: '#111827', boxSizing: 'border-box',
+  fontFamily: 'inherit',
 };

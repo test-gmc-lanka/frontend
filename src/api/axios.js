@@ -20,7 +20,7 @@ const processQueue = (error, token = null) => {
 };
 
 // Auth endpoints that should NOT trigger a refresh attempt
-const PUBLIC_PATHS = ['/auth/login', '/auth/register', '/auth/refresh'];
+const PUBLIC_PATHS = ['/auth/login', '/auth/register', '/auth/refresh', '/auth/forgot-password', '/auth/reset-password'];
 
 api.interceptors.response.use(
   (res) => res,

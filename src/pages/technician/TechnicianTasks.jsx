@@ -70,9 +70,29 @@ export default function TechnicianTasks() {
                       {task.description}
                     </p>
                     <div className="flex gap-4" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      <span>Product: <strong style={{ color: 'var(--text-primary)' }}>{task.productName}</strong></span>
+                      {task.productName
+                        ? <span>Product: <strong style={{ color: 'var(--text-primary)' }}>{task.productName}</strong></span>
+                        : <span>Custom design: <strong style={{ color: 'var(--text-primary)' }}>{task.title}</strong></span>}
                       <span>Cost: <strong style={{ color: 'var(--color-primary)' }}>{formatLKR(task.cost)}</strong></span>
                     </div>
+                    {task.imageUrls?.length > 0 && (
+                      <div style={{ marginTop: '0.75rem' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 6 }}>
+                          Reference images ({task.imageUrls.length}) — click to open full size
+                        </div>
+                        <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
+                          {task.imageUrls.map((url, i) => (
+                            <a key={url} href={url} target="_blank" rel="noreferrer" title={`Open image ${i + 1}`}>
+                              <img
+                                src={url}
+                                alt={`Reference ${i + 1} for task #${task.maintenanceId}`}
+                                style={{ width: 88, height: 88, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)', display: 'block' }}
+                              />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div style={{ marginLeft: '1rem', flexShrink: 0 }}>
                     <select

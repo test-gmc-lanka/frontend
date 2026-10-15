@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiShoppingCart, FiArrowRight, FiCheckCircle, FiMail, FiPhone, FiMapPin, FiStar } from 'react-icons/fi';
+import { FiShoppingCart, FiArrowRight, FiCheckCircle, FiStar } from 'react-icons/fi';
 import { getProduct } from '../api/products';
 import { addToCart } from '../api/cart';
 import { useAuth } from '../context/AuthContext';
@@ -8,33 +8,12 @@ import { formatLKR, getErrorMessage } from '../utils/formatters';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
 
-/* ── Thumbnail pool by category ────────────────────────────────────────── */
-const THUMBS = {
-  Furniture: [
-    'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=120&q=70',
-    'https://images.unsplash.com/photo-1506439773649-6e0eb8cfb237?w=120&q=70',
-    'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=120&q=70',
-    'https://images.unsplash.com/photo-1493663284031-b7e3aefcae8e?w=120&q=70',
-  ],
-  'Home Decor': [
-    'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=120&q=70',
-    'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=120&q=70',
-    'https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?w=120&q=70',
-    'https://images.unsplash.com/photo-1616046229478-9901c5536a45?w=120&q=70',
-  ],
-  'CNC Art Panels': [
-    'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=120&q=70',
-    'https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?w=120&q=70',
-    'https://images.unsplash.com/photo-1518770660439-4636190af475?w=120&q=70',
-    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=120&q=70',
-  ],
-  default: [
-    'https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=120&q=70',
-    'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?w=120&q=70',
-    'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=120&q=70',
-    'https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?w=120&q=70',
-  ],
-};
+/* ── Gallery: cover image first, then the rest in admin order ──────────── */
+function buildGallery(product) {
+  const images = product.imageUrls?.length ? product.imageUrls : (product.imageUrl ? [product.imageUrl] : []);
+  if (!product.imageUrl || !images.includes(product.imageUrl)) return images;
+  return [product.imageUrl, ...images.filter((img) => img !== product.imageUrl)];
+}
 
 /* ── Spec generator ─────────────────────────────────────────────────────── */
 function buildSpecs(product) {
@@ -107,6 +86,7 @@ export default function ProductDetailPage({ onLoginClick }) {
   const [quantity] = useState(1);
 
   useEffect(() => {
+    setActiveThumb(0);
     getProduct(id)
       .then((r) => setProduct(r.data))
       .catch(() => toast.error('Product not found'))
@@ -131,9 +111,8 @@ export default function ProductDetailPage({ onLoginClick }) {
   if (loading) return <div style={{ background: '#fff', minHeight: '100vh' }}><LoadingSpinner /></div>;
   if (!product) return <div style={{ background: '#fff', minHeight: '100vh', padding: '2rem', textAlign: 'center' }}>Product not found.</div>;
 
-  const catName = product.category?.name || 'default';
-  const thumbs = THUMBS[catName] || THUMBS.default;
-  const mainImage = activeThumb === 0 ? product.imageUrl : thumbs[activeThumb];
+  const gallery = buildGallery(product);
+  const mainImage = gallery[activeThumb] || gallery[0];
   const specs = buildSpecs(product);
   const features = buildFeatures(product);
   const inStock = (product.stockQuantity || 0) > 0;
@@ -156,20 +135,22 @@ export default function ProductDetailPage({ onLoginClick }) {
               )}
             </div>
             {/* Thumbnails */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
-              {[product.imageUrl, ...thumbs.slice(1)].map((img, i) => (
-                <div
-                  key={i}
-                  onClick={() => setActiveThumb(i)}
-                  style={{
-                    border: activeThumb === i ? '2px solid #1e3a5c' : '1px solid #e5e7eb',
-                    borderRadius: 4, overflow: 'hidden', cursor: 'pointer',
-                  }}
-                >
-                  <img src={img} alt="" style={{ width: '100%', height: 72, objectFit: 'cover', display: 'block' }} />
-                </div>
-              ))}
-            </div>
+            {gallery.length > 1 && (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+                {gallery.map((img, i) => (
+                  <div
+                    key={img}
+                    onClick={() => setActiveThumb(i)}
+                    style={{
+                      border: activeThumb === i ? '2px solid #1e3a5c' : '1px solid #e5e7eb',
+                      borderRadius: 4, overflow: 'hidden', cursor: 'pointer',
+                    }}
+                  >
+                    <img src={img} alt="" style={{ width: '100%', height: 72, objectFit: 'cover', display: 'block' }} />
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Right — details */}
@@ -332,48 +313,6 @@ export default function ProductDetailPage({ onLoginClick }) {
               <p style={{ fontSize: '0.85rem', color: '#6b7280', lineHeight: 1.65, fontStyle: 'italic', margin: 0 }}>{r.text}</p>
             </div>
           ))}
-        </div>
-      </div>
-
-      {/* ── Footer ────────────────────────────────────────────────────────── */}
-      <div style={{ borderTop: '1px solid #e5e7eb', background: '#fff' }}>
-        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '3rem 1.5rem 2rem', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '2.5rem' }}>
-
-          {/* Quick Links */}
-          <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em', color: '#9ca3af', marginBottom: '1rem' }}>QUICK LINKS</div>
-            {['About Us', 'Our Services', 'CNC Machines', 'Wood Portfolio'].map((l) => (
-              <div key={l} style={{ fontSize: '0.875rem', color: '#374151', marginBottom: '0.6rem', cursor: 'pointer' }}>{l}</div>
-            ))}
-          </div>
-
-          {/* Contact */}
-          <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em', color: '#9ca3af', marginBottom: '1rem' }}>CONTACT</div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', fontSize: '0.875rem', color: '#374151' }}>
-              <FiMail size={14} color="#6b7280" /> contact@gmclanka.com
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', fontSize: '0.875rem', color: '#374151' }}>
-              <FiPhone size={14} color="#6b7280" /> +94 11 234 5678
-            </div>
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.875rem', color: '#374151' }}>
-              <FiMapPin size={14} color="#6b7280" style={{ marginTop: 2, flexShrink: 0 }} />
-              <span>123 Industrial Zone,<br />Colombo, Sri Lanka</span>
-            </div>
-          </div>
-
-          {/* Legal */}
-          <div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.1em', color: '#9ca3af', marginBottom: '1rem' }}>LEGAL</div>
-            {['Privacy Policy', 'Terms of Service', 'Cookie Policy'].map((l) => (
-              <div key={l} style={{ fontSize: '0.875rem', color: '#374151', marginBottom: '0.6rem', cursor: 'pointer' }}>{l}</div>
-            ))}
-          </div>
-        </div>
-
-        {/* Copyright bar */}
-        <div style={{ borderTop: '1px solid #e5e7eb', padding: '1rem 1.5rem', maxWidth: 1120, margin: '0 auto' }}>
-          <span style={{ fontSize: '0.8rem', color: '#9ca3af' }}>© 2024 GMC Lanka. Engineered for Excellence.</span>
         </div>
       </div>
 
