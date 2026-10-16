@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { FiPlus, FiEdit2, FiTrash2, FiX, FiStar, FiUpload, FiCheck } from 'react-icons/fi';
 import {
-  getProducts, getCategories, createProduct, updateProduct, deleteProduct, uploadProductImages,
+  getCategories, createProduct, updateProduct, deleteProduct, uploadProductImages, setProductActive,
 } from '../../api/products';
-import { adminCreateCategory } from '../../api/admin';
+import { adminCreateCategory, adminGetProducts } from '../../api/admin';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
 import { formatLKR, getErrorMessage } from '../../utils/formatters';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Pagination, { clampPage } from '../../components/common/Pagination';
@@ -58,7 +59,7 @@ export default function AdminProducts() {
   const fileInputRef = useRef(null);
 
   const fetchAll = () =>
-    Promise.all([getProducts(), getCategories()])
+    Promise.all([adminGetProducts(), getCategories()])
       .then(([p, c]) => { setProducts(p.data); setCategories(c.data); })
       .catch(() => toast.error('Failed to load products'))
       .finally(() => setLoading(false));
@@ -158,12 +159,29 @@ export default function AdminProducts() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this product?')) return;
+  // Archiving keeps the product on past orders and reviews but removes it from the shop and carts
+  const [archiveTarget, setArchiveTarget] = useState(null);
+  const [archiving, setArchiving] = useState(false);
+
+  const handleArchive = async () => {
+    setArchiving(true);
     try {
-      await deleteProduct(id);
-      toast.success('Product deleted');
-      setProducts((prev) => prev.filter((p) => p.productId !== id));
+      await deleteProduct(archiveTarget.productId);
+      setProducts((prev) => prev.map((p) => (p.productId === archiveTarget.productId ? { ...p, active: false } : p)));
+      toast.success(`"${archiveTarget.name}" archived`);
+      setArchiveTarget(null);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setArchiving(false);
+    }
+  };
+
+  const handleRestore = async (p) => {
+    try {
+      const { data } = await setProductActive(p.productId, true);
+      setProducts((prev) => prev.map((x) => (x.productId === data.productId ? data : x)));
+      toast.success(`"${p.name}" is back in the shop`);
     } catch (err) {
       toast.error(getErrorMessage(err));
     }
@@ -203,7 +221,7 @@ export default function AdminProducts() {
         background: '#fff', border: '1px solid #e5e7eb',
         borderRadius: 12, overflow: 'hidden',
       }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+        <div className="scroll-x"><table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 720 }}>
           <thead>
             <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
               {['IMAGE', 'NAME', 'CATEGORY', 'PRICE', 'STOCK', 'ACTIONS'].map((h) => (
@@ -223,6 +241,7 @@ export default function AdminProducts() {
               </tr>
             ) : paginated.map((p, idx) => (
               <tr key={p.productId} style={{
+                opacity: p.active === false ? 0.6 : 1,
                 borderBottom: idx < paginated.length - 1 ? '1px solid #f3f4f6' : 'none',
               }}>
                 {/* Image */}
@@ -252,7 +271,14 @@ export default function AdminProducts() {
 
                 {/* Name + subtitle */}
                 <td style={{ padding: '1rem 1.25rem' }}>
-                  <div style={{ fontWeight: 600, color: '#111827', fontSize: '0.92rem' }}>{p.name}</div>
+                  <div style={{ fontWeight: 600, color: '#111827', fontSize: '0.92rem' }}>
+                    {p.name}
+                    {p.active === false && (
+                      <span style={{ marginLeft: 8, background: '#f3f4f6', color: '#6b7280', fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>
+                        ARCHIVED
+                      </span>
+                    )}
+                  </div>
                   {p.material && (
                     <div style={{ fontSize: '0.78rem', color: '#9ca3af', marginTop: 2 }}>{p.material}</div>
                   )}
@@ -288,22 +314,34 @@ export default function AdminProducts() {
                     >
                       <FiEdit2 size={17} />
                     </button>
-                    <button
-                      onClick={() => handleDelete(p.productId)}
-                      title="Delete"
-                      style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        color: '#ef4444', padding: 4,
-                      }}
-                    >
-                      <FiTrash2 size={17} />
-                    </button>
+                    {p.active === false ? (
+                      <button
+                        onClick={() => handleRestore(p)}
+                        title="Restore to the shop"
+                        aria-label={`Restore ${p.name}`}
+                        style={{ background: 'none', border: '1px solid #99f6e4', borderRadius: 6, cursor: 'pointer', color: '#0f766e', padding: '2px 8px', fontSize: '0.75rem', fontWeight: 600 }}
+                      >
+                        Restore
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setArchiveTarget(p)}
+                        title="Archive (remove from the shop)"
+                        aria-label={`Archive ${p.name}`}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          color: '#ef4444', padding: 4,
+                        }}
+                      >
+                        <FiTrash2 size={17} />
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
 
         <Pagination
           page={safePage}
@@ -314,6 +352,18 @@ export default function AdminProducts() {
           style={{ borderTop: '1px solid #e5e7eb' }}
         />
       </div>
+
+      {archiveTarget && (
+        <ConfirmDialog
+          title="Archive this product?"
+          message={<><strong>{archiveTarget.name}</strong> will be removed from the shop and from customers&rsquo; carts. Past orders and reviews keep it, and you can restore it any time.</>}
+          confirmLabel="Archive"
+          tone="danger"
+          loading={archiving}
+          onConfirm={handleArchive}
+          onCancel={() => setArchiveTarget(null)}
+        />
+      )}
 
       {/* Add / Edit modal */}
       {showForm && (

@@ -42,6 +42,21 @@ export function AuthProvider({ children }) {
       .catch(() => { /* the axios interceptor handles expired sessions */ });
   }, [userId]);
 
+  // Session ended elsewhere: refresh token expired (axios interceptor) or logout in another tab
+  useEffect(() => {
+    const clear = () => setUser(null);
+    const onStorage = (e) => {
+      if (e.key === 'user' && !e.newValue) clear();
+      if (e.key === 'user' && e.newValue) setUser(JSON.parse(e.newValue));
+    };
+    window.addEventListener('auth:logout', clear);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener('auth:logout', clear);
+      window.removeEventListener('storage', onStorage);
+    };
+  }, []);
+
   const logout = async () => {
     try { await apiLogout(); } catch { /* ignore */ }
     localStorage.removeItem('accessToken');

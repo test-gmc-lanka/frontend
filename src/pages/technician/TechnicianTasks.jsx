@@ -3,12 +3,26 @@ import { FiTool, FiRefreshCw } from 'react-icons/fi';
 import api from '../../api/axios';
 import { formatLKR, getErrorMessage } from '../../utils/formatters';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import ConfirmDialog from '../../components/common/ConfirmDialog';
+import Pagination, { clampPage } from '../../components/common/Pagination';
+import { deadlineInfo, formatDeadline } from '../../utils/deadline';
 import toast from 'react-hot-toast';
+
+const PAGE_SIZE = 5;
 
 const TASK_STATUSES = ['ASSIGNED', 'IN_PROGRESS', 'COMPLETED'];
 
+// Unfinished tasks first, ordered by deadline (soonest / overdue at the top)
+function sortTasks(tasks) {
+  const rank = (t) => (t.status === 'COMPLETED' ? 1 : 0);
+  return [...tasks].sort((a, b) => rank(a) - rank(b)
+    || (a.deadline || '9999-12-31').localeCompare(b.deadline || '9999-12-31'));
+}
+
 export default function TechnicianTasks() {
   const [tasks, setTasks] = useState([]);
+  const [page, setPage] = useState(1);
+  const [confirmComplete, setConfirmComplete] = useState(null);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
 
@@ -33,6 +47,9 @@ export default function TechnicianTasks() {
     }
   };
 
+  const sortedTasks = sortTasks(tasks);
+  const safePage = clampPage(page, sortedTasks.length, PAGE_SIZE);
+
   if (loading) return <LoadingSpinner />;
 
   return (
@@ -56,7 +73,7 @@ export default function TechnicianTasks() {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            {tasks.map((task) => (
+            {sortedTasks.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE).map((task) => (
               <div key={task.maintenanceId} className="card">
                 <div className="flex justify-between items-start">
                   <div style={{ flex: 1 }}>
@@ -65,6 +82,14 @@ export default function TechnicianTasks() {
                       <span className={`badge ${task.status === 'COMPLETED' ? 'badge-delivered' : task.status === 'IN_PROGRESS' ? 'badge-processing' : 'badge-pending'}`}>
                         {task.status || 'ASSIGNED'}
                       </span>
+                      {(() => {
+                        const info = deadlineInfo(task.deadline, task.status);
+                        return info && (
+                          <span title={`Deadline: ${formatDeadline(task.deadline)}`} style={{ background: info.bg, color: info.color, fontSize: '0.72rem', fontWeight: 700, padding: '2px 10px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+                            {info.label}
+                          </span>
+                        );
+                      })()}
                     </div>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem', marginBottom: '0.75rem' }}>
                       {task.description}
@@ -100,7 +125,10 @@ export default function TechnicianTasks() {
                       style={{ padding: '0.375rem 0.5rem', fontSize: '0.8rem' }}
                       value={task.status || 'ASSIGNED'}
                       disabled={updatingId === task.maintenanceId || task.status === 'COMPLETED'}
-                      onChange={(e) => handleStatusChange(task.maintenanceId, e.target.value)}
+                      onChange={(e) => (e.target.value === 'COMPLETED'
+                        ? setConfirmComplete(task)
+                        : handleStatusChange(task.maintenanceId, e.target.value))}
+                      aria-label={`Status of task #${task.maintenanceId}`}
                     >
                       {TASK_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                     </select>
@@ -108,9 +136,21 @@ export default function TechnicianTasks() {
                 </div>
               </div>
             ))}
+            <Pagination page={safePage} totalItems={sortedTasks.length} pageSize={PAGE_SIZE}
+              onPageChange={setPage} itemLabel="tasks"
+              style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12 }} />
           </div>
         )}
       </div>
+      {confirmComplete && (
+        <ConfirmDialog
+          title="Mark this task completed?"
+          message={<>Task #{confirmComplete.maintenanceId} will be closed and the admin notified. This can&rsquo;t be undone.</>}
+          confirmLabel="Mark completed"
+          onConfirm={() => { handleStatusChange(confirmComplete.maintenanceId, 'COMPLETED'); setConfirmComplete(null); }}
+          onCancel={() => setConfirmComplete(null)}
+        />
+      )}
     </div>
   );
 }

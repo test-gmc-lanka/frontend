@@ -1,35 +1,44 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiTrash2, FiShoppingCart, FiArrowRight, FiInfo } from 'react-icons/fi';
+import { FiTrash2, FiShoppingCart, FiArrowRight } from 'react-icons/fi';
 import { getCart, updateCartItem, removeCartItem, clearCart } from '../api/cart';
-import { placeOrder } from '../api/orders';
+import { getCheckoutSummary } from '../api/orders';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 import { formatLKR, getErrorMessage } from '../utils/formatters';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
-
-const TAX_RATE = 0.15;
 
 export default function CartPage() {
   const navigate = useNavigate();
   const { refreshCart } = useAuth();
   const [cart, setCart] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [placingOrder, setPlacingOrder] = useState(false);
+  const [summary, setSummary] = useState(null); // VAT rate etc. from the server
+  const [pendingId, setPendingId] = useState(null); // item whose quantity is being saved
+  const [confirmClear, setConfirmClear] = useState(false);
 
   useEffect(() => {
     getCart()
       .then((r) => setCart(r.data))
       .catch(() => toast.error('Failed to load cart'))
       .finally(() => setLoading(false));
+    getCheckoutSummary().then((r) => setSummary(r.data)).catch(() => {});
   }, []);
 
   const handleUpdateQty = async (itemId, qty) => {
+    if (pendingId) return; // ignore rapid clicks until the last change is saved
     if (qty === 0) { handleRemove(itemId); return; }
+    setPendingId(itemId);
     try {
       const { data } = await updateCartItem(itemId, qty);
       setCart(data);
-    } catch (err) { toast.error(getErrorMessage(err)); }
+      refreshCart();
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setPendingId(null);
+    }
   };
 
   const handleRemove = async (itemId) => {
@@ -42,7 +51,7 @@ export default function CartPage() {
   };
 
   const handleClearCart = async () => {
-    if (!window.confirm('Remove all items from cart?')) return;
+    setConfirmClear(false);
     try {
       await clearCart();
       setCart((c) => ({ ...c, items: [], totalAmount: 0 }));
@@ -51,25 +60,16 @@ export default function CartPage() {
     } catch (err) { toast.error(getErrorMessage(err)); }
   };
 
-  const handleCheckout = async () => {
-    setPlacingOrder(true);
-    try {
-      const { data } = await placeOrder({ orderType: 'B2C', notes: '' });
-      refreshCart(); // the backend empties the cart when an order is placed
-      toast.success('Order placed successfully!');
-      navigate(`/orders/${data.orderId}`);
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setPlacingOrder(false);
-    }
-  };
+  // Delivery details, payment method and the final total are handled on the checkout page
+  const handleCheckout = () => navigate('/checkout');
 
   if (loading) return <LoadingSpinner />;
 
   const items = cart?.items || [];
   const subtotal = items.reduce((s, i) => s + (i.subtotal || 0), 0);
-  const tax = subtotal * TAX_RATE;
+  // VAT comes from the server so the cart always matches checkout (delivery is added there)
+  const taxRate = (summary?.taxRatePercent ?? 0) / 100;
+  const tax = subtotal * taxRate;
   const total = subtotal + tax;
 
   return (
@@ -89,7 +89,7 @@ export default function CartPage() {
             <h1 style={{ fontSize: '1.75rem', fontWeight: 700, color: '#111827' }}>Shopping Cart</h1>
             {items.length > 0 && (
               <button
-                onClick={handleClearCart}
+                onClick={() => setConfirmClear(true)}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 6,
                   background: 'none', border: 'none', cursor: 'pointer',
@@ -114,7 +114,7 @@ export default function CartPage() {
               </button>
             </div>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '2rem', alignItems: 'start' }}>
+            <div className="layout-cart">
 
               {/* ── Left: Cart items ── */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -160,6 +160,8 @@ export default function CartPage() {
                         <div style={{ display: 'flex', alignItems: 'center', border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
                           <button
                             onClick={() => handleUpdateQty(item.cartItemId, item.quantity - 1)}
+                            disabled={pendingId === item.cartItemId}
+                            aria-label={`Decrease quantity of ${item.product?.name}`}
                             style={qtyBtnStyle}
                           >−</button>
                           <span style={{ padding: '0.35rem 1rem', fontWeight: 600, fontSize: '0.9rem', borderLeft: '1px solid #e5e7eb', borderRight: '1px solid #e5e7eb', minWidth: 40, textAlign: 'center' }}>
@@ -167,7 +169,10 @@ export default function CartPage() {
                           </span>
                           <button
                             onClick={() => handleUpdateQty(item.cartItemId, item.quantity + 1)}
-                            style={qtyBtnStyle}
+                            disabled={pendingId === item.cartItemId || item.quantity >= (item.product?.stockQuantity ?? Infinity)}
+                            aria-label={`Increase quantity of ${item.product?.name}`}
+                            title={item.quantity >= (item.product?.stockQuantity ?? Infinity) ? 'No more in stock' : undefined}
+                            style={{ ...qtyBtnStyle, opacity: item.quantity >= (item.product?.stockQuantity ?? Infinity) ? 0.4 : 1 }}
                           >+</button>
                         </div>
                         <button
@@ -196,30 +201,29 @@ export default function CartPage() {
                   <span style={{ fontSize: '0.85rem', color: '#0f766e', fontWeight: 500 }}>Calculated at next step</span>
                 </div>
                 <div style={{ ...summaryRowStyle, marginBottom: '1rem' }}>
-                  <span style={summaryLabel}>Tax (VAT 15%)</span>
+                  <span style={summaryLabel}>VAT{summary ? ` (${summary.taxRatePercent}%)` : ''}</span>
                   <span style={summaryValue}>{formatLKR(tax)}</span>
                 </div>
 
                 <div style={{ height: 1, background: '#f3f4f6', marginBottom: '1rem' }} />
 
                 <div style={{ marginBottom: '1.25rem' }}>
-                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#9ca3af', letterSpacing: '0.08em', marginBottom: 4 }}>TOTAL AMOUNT</div>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#9ca3af', letterSpacing: '0.08em', marginBottom: 4 }}>ESTIMATED TOTAL (BEFORE DELIVERY)</div>
                   <div style={{ fontWeight: 800, fontSize: '1.5rem', color: '#111827' }}>{formatLKR(total)}</div>
                 </div>
 
                 <button
                   onClick={handleCheckout}
-                  disabled={placingOrder}
                   style={{
-                    width: '100%', background: placingOrder ? '#2d6a8a' : '#0f3460',
+                    width: '100%', background: '#0f3460',
                     color: '#fff', border: 'none', borderRadius: 8,
                     padding: '0.875rem', fontSize: '0.95rem', fontWeight: 700,
-                    cursor: placingOrder ? 'not-allowed' : 'pointer',
+                    cursor: 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                     marginBottom: '0.875rem',
                   }}
                 >
-                  {placingOrder ? 'Placing Order...' : <><span>Proceed to Checkout</span><FiArrowRight size={17} /></>}
+                  <span>Proceed to Checkout</span><FiArrowRight size={17} />
                 </button>
 
                 <button
@@ -229,19 +233,23 @@ export default function CartPage() {
                   Continue Shopping
                 </button>
 
-                {/* Info box */}
-                <div style={{ background: '#f3f4f6', borderRadius: 8, padding: '0.75rem', display: 'flex', gap: 8 }}>
-                  <FiInfo size={16} color="#6b7280" style={{ flexShrink: 0, marginTop: 1 }} />
-                  <p style={{ fontSize: '0.78rem', color: '#6b7280', margin: 0, lineHeight: 1.5 }}>
-                    Free industrial installation included for orders over LKR 500,000 within the Western Province.
-                  </p>
-                </div>
               </div>
             </div>
           )}
         </div>
       </div>
 
+      {confirmClear && (
+        <ConfirmDialog
+          title="Clear your cart?"
+          message="All items will be removed from your cart."
+          confirmLabel="Clear cart"
+          cancelLabel="Keep items"
+          tone="danger"
+          onConfirm={handleClearCart}
+          onCancel={() => setConfirmClear(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,11 +1,16 @@
-import { useState, useEffect, useMemo } from 'react';
-import { FiCalendar, FiArrowRight, FiChevronDown, FiChevronLeft, FiChevronRight, FiVideo } from 'react-icons/fi';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { FiCalendar, FiArrowRight, FiChevronDown, FiVideo, FiImage, FiX } from 'react-icons/fi';
 import {
-  bookAppointment, getMyAppointments, cancelAppointment, rescheduleAppointment,
+  bookAppointment, getMyAppointments, cancelAppointment, rescheduleAppointment, uploadAppointmentImages,
 } from '../api/appointments';
+import ImageThumbs from '../components/common/ImageThumbs';
+import ConfirmDialog from '../components/common/ConfirmDialog';
+
+const MAX_IMAGES = 6;
 import { getCategories } from '../api/products';
 import { getErrorMessage } from '../utils/formatters';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import Pagination, { clampPage } from '../components/common/Pagination';
 import toast from 'react-hot-toast';
 
 const PAGE_SIZE = 3;
@@ -46,7 +51,8 @@ function statusInfo(status) {
 function formatApptCard(dateStr) {
   if (!dateStr) return '-';
   const d = new Date(dateStr);
-  const date = d.toISOString().slice(0, 10);
+  // Local date (toISOString would give the UTC date, a day off for early-morning times)
+  const date = d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   const hours = d.getHours();
   const mins = String(d.getMinutes()).padStart(2, '0');
   const ampm = hours >= 12 ? 'PM' : 'AM';
@@ -78,6 +84,28 @@ export default function AppointmentPage() {
 
   /* Form state */
   const [form, setForm] = useState({ categoryId: '', date: '', subject: '', message: '' });
+  const [images, setImages] = useState([]); // uploaded image URLs
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  const handleImageSelect = async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (files.length === 0) return;
+    const room = MAX_IMAGES - images.length;
+    if (files.length > room) toast.error(`You can attach up to ${MAX_IMAGES} images`);
+    const toUpload = files.slice(0, room);
+    if (toUpload.length === 0) return;
+    setUploading(true);
+    try {
+      const { data } = await uploadAppointmentImages(toUpload);
+      setImages((prev) => [...prev, ...data]);
+    } catch (err) {
+      toast.error(getErrorMessage(err));
+    } finally {
+      setUploading(false);
+    }
+  };
 
   /* Reschedule inline state */
   const [rescheduleId, setRescheduleId] = useState(null);
@@ -90,10 +118,12 @@ export default function AppointmentPage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Earliest bookable time: tomorrow, in local time ("YYYY-MM-DDTHH:MM" for datetime-local)
   const minDate = useMemo(() => {
     const d = new Date();
     d.setDate(d.getDate() + 1);
-    return d.toISOString().slice(0, 16);
+    const pad = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   }, []);
 
   const handleBook = async (e) => {
@@ -103,9 +133,15 @@ export default function AppointmentPage() {
       ? `${form.subject}\n${form.message}`
       : form.message;
     try {
-      await bookAppointment({ date: form.date, message: combinedMessage });
+      await bookAppointment({
+        date: form.date,
+        message: combinedMessage,
+        imageUrls: images,
+        categoryId: form.categoryId ? Number(form.categoryId) : null,
+      });
       toast.success('Appointment booked!');
       setForm({ categoryId: '', date: '', subject: '', message: '' });
+      setImages([]);
       const { data } = await getMyAppointments();
       setAppointments(data);
       setPage(1);
@@ -116,8 +152,10 @@ export default function AppointmentPage() {
     }
   };
 
+  const [cancelId, setCancelId] = useState(null);
+
   const handleCancel = async (id) => {
-    if (!window.confirm('Cancel this appointment?')) return;
+    setCancelId(null);
     try {
       await cancelAppointment(id);
       toast.success('Appointment cancelled');
@@ -144,10 +182,8 @@ export default function AppointmentPage() {
         : new Date(a.date) - new Date(b.date)
     ), [appointments, sortNewest]);
 
-  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
+  const safePage = clampPage(page, sorted.length, PAGE_SIZE);
   const paginated = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-  const pageNums = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   if (loading) return <LoadingSpinner />;
 
@@ -158,7 +194,7 @@ export default function AppointmentPage() {
         {/* ── Booking card ── */}
         <div style={{
           background: '#fff', borderRadius: 14, border: '1px solid #e5e7eb',
-          display: 'grid', gridTemplateColumns: '1fr 1.1fr',
+          display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
           overflow: 'hidden', marginBottom: '2.5rem',
         }}>
           {/* Left panel */}
@@ -263,9 +299,51 @@ export default function AppointmentPage() {
               />
             </div>
 
+            {/* Reference images */}
+            <div>
+              <div style={fLabelStyle}>PHOTOS OR SKETCHES (OPTIONAL)</div>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {images.map((url) => (
+                  <div key={url} style={{ position: 'relative', width: 72, height: 72, borderRadius: 8, overflow: 'hidden', border: '1px solid #e5e7eb' }}>
+                    <img src={url} alt="Attached reference" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    <button
+                      type="button"
+                      onClick={() => setImages((prev) => prev.filter((u) => u !== url))}
+                      aria-label="Remove image"
+                      style={{ position: 'absolute', top: 3, right: 3, width: 20, height: 20, borderRadius: '50%', border: 'none', background: 'rgba(255,255,255,0.92)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                    >
+                      <FiX size={12} />
+                    </button>
+                  </div>
+                ))}
+                {images.length < MAX_IMAGES && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    style={{ width: 72, height: 72, borderRadius: 8, border: '1.5px dashed #d1d5db', background: '#f9fafb', color: '#6b7280', fontSize: '0.68rem', fontWeight: 600, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, cursor: uploading ? 'wait' : 'pointer' }}
+                  >
+                    <FiImage size={18} />
+                    {uploading ? 'Uploading…' : 'Add photo'}
+                  </button>
+                )}
+              </div>
+              <div style={{ fontSize: '0.72rem', color: '#9ca3af', marginTop: 6 }}>
+                Share photos of your space, a sketch or an example design (up to {MAX_IMAGES}, max 10 MB each).
+              </div>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                multiple
+                onChange={handleImageSelect}
+                style={{ display: 'none' }}
+              />
+            </div>
+
             <button
               type="submit"
-              disabled={submitting}
+              disabled={submitting || uploading}
               style={{
                 background: submitting ? '#2d6a8a' : '#0f3460',
                 color: '#fff', border: 'none', borderRadius: 8,
@@ -303,10 +381,10 @@ export default function AppointmentPage() {
           </div>
         ) : (
           <>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '1.75rem' }}>
+            <div className="grid-cards-3">
               {paginated.map((apt) => {
                 const si = statusInfo(apt.status);
-                const ref = `GMC-${4800 + apt.appointmentId}`;
+                const ref = `#${apt.appointmentId}`;
                 const title = parseTitle(apt.message);
                 const desc = parseDesc(apt.message);
                 // Same states the backend allows the customer to reschedule/cancel from
@@ -332,6 +410,10 @@ export default function AppointmentPage() {
 
                     {/* Description */}
                     {desc && <div style={{ fontSize: '0.8rem', color: '#6b7280', lineHeight: 1.4 }}>{desc}</div>}
+                    {apt.categoryName && (
+                      <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#0f766e' }}>Product line: {apt.categoryName}</div>
+                    )}
+                    <ImageThumbs urls={apt.imageUrls} size={40} label="Your image" />
 
                     {/* Date */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem', color: '#374151', marginTop: 'auto' }}>
@@ -386,7 +468,7 @@ export default function AppointmentPage() {
                         ) : (
                           <>
                             <button onClick={() => { setRescheduleId(apt.appointmentId); setNewDate(''); }} style={smallBtnGhost}>Reschedule</button>
-                            <button onClick={() => handleCancel(apt.appointmentId)} style={smallBtnDanger}>Cancel</button>
+                            <button onClick={() => setCancelId(apt.appointmentId)} style={smallBtnDanger}>Cancel</button>
                           </>
                         )}
                       </div>
@@ -397,39 +479,30 @@ export default function AppointmentPage() {
             </div>
 
             {/* Pagination */}
-            {totalPages > 1 && (
-              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6 }}>
-                <PagBtn onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage === 1}>
-                  <FiChevronLeft size={15} />
-                </PagBtn>
-                {pageNums.map((n) => (
-                  <PagBtn key={n} active={n === safePage} onClick={() => setPage(n)}>{n}</PagBtn>
-                ))}
-                {totalPages > 4 && safePage < totalPages - 1 && <span style={{ color: '#9ca3af' }}>…</span>}
-                <PagBtn onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}>
-                  <FiChevronRight size={15} />
-                </PagBtn>
-              </div>
-            )}
+            <Pagination
+              page={safePage}
+              totalItems={sorted.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+              itemLabel="appointments"
+              style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12 }}
+            />
           </>
         )}
       </div>
 
+      {cancelId && (
+        <ConfirmDialog
+          title="Cancel this appointment?"
+          message="We'll let our team know. You can book a new appointment any time."
+          confirmLabel="Cancel appointment"
+          cancelLabel="Keep it"
+          tone="danger"
+          onConfirm={() => handleCancel(cancelId)}
+          onCancel={() => setCancelId(null)}
+        />
+      )}
     </div>
-  );
-}
-
-function PagBtn({ children, onClick, disabled, active }) {
-  return (
-    <button onClick={onClick} disabled={disabled} style={{
-      width: 36, height: 36, borderRadius: 8,
-      border: active ? 'none' : '1px solid #e5e7eb',
-      background: active ? '#0f3460' : '#fff',
-      color: active ? '#fff' : disabled ? '#d1d5db' : '#374151',
-      fontWeight: active ? 700 : 500, fontSize: '0.875rem',
-      cursor: disabled ? 'not-allowed' : 'pointer',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-    }}>{children}</button>
   );
 }
 

@@ -12,3 +12,11 @@ export const adminUpdateAppointmentStatus = (id, status, extra = {}) =>
   api.put(`/admin/appointments/${id}/status`, { status, ...extra });
 export const adminRescheduleAppointment = (id, newDate, note) =>
   api.put(`/admin/appointments/${id}/reschedule`, { newDate, note });
+// Upload photos first, then pass the returned URLs as imageUrls when booking
+export const uploadAppointmentImages = (files) => {
+  const formData = new FormData();
+  files.forEach((file) => formData.append('files', file));
+  return api.post('/appointments/images', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+};

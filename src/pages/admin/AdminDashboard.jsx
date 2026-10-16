@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { FiShoppingBag, FiDollarSign, FiClock, FiCalendar, FiUsers, FiPackage, FiAlertTriangle } from 'react-icons/fi';
 import { getDashboard } from '../../api/admin';
 import { formatLKR } from '../../utils/formatters';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
+
+// Most urgent first; the full list is on the Products page
+const LOW_STOCK_LIMIT = 10;
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState(null);
@@ -72,7 +76,7 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {stats.lowStockProducts.map((p) => (
+                {[...stats.lowStockProducts].sort((a, b) => a.stockQuantity - b.stockQuantity).slice(0, LOW_STOCK_LIMIT).map((p) => (
                   <tr key={p.productId}>
                     <td style={{ fontWeight: 500 }}>{p.name}</td>
                     <td>{p.category?.name || '-'}</td>
@@ -87,6 +91,12 @@ export default function AdminDashboard() {
                 ))}
               </tbody>
             </table>
+            {stats.lowStockProducts.length > LOW_STOCK_LIMIT && (
+              <div style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: 'var(--text-secondary)', borderTop: '1px solid var(--border)' }}>
+                Showing the {LOW_STOCK_LIMIT} lowest of {stats.lowStockProducts.length}.{' '}
+                <Link to="/admin/products" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>View all products</Link>
+              </div>
+            )}
           </div>
         </div>
       )}

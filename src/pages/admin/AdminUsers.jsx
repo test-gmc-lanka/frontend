@@ -184,7 +184,7 @@ export default function AdminUsers() {
               </div>
               <div className="form-group">
                 <label className="form-label">Password *</label>
-                <input type="password" className="form-input" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} minLength={6} required />
+                <input type="password" className="form-input" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} minLength={8} maxLength={72} required />
               </div>
               <div className="grid grid-2" style={{ gap: '1rem' }}>
                 <div className="form-group">

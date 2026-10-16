@@ -1,15 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiArrowRight } from 'react-icons/fi';
 import { login as apiLogin } from '../../api/auth';
 import { useAuth } from '../../context/AuthContext';
 import { getErrorMessage } from '../../utils/formatters';
 import toast from 'react-hot-toast';
 
-export default function LoginModal({ onClose, onSwitchToRegister, onForgotPassword }) {
+export default function LoginModal({ onClose, onLoggedIn, onSwitchToRegister, onForgotPassword }) {
   const { login } = useAuth();
   const [form, setForm] = useState({ email: '', password: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -19,10 +25,10 @@ export default function LoginModal({ onClose, onSwitchToRegister, onForgotPasswo
       const { data } = await apiLogin(form);
       login(data);
       toast.success(`Welcome back, ${data.name}!`);
-      onClose();
+      if (onLoggedIn) onLoggedIn(data); else onClose();
     } catch (err) {
       if (err.code === 'ERR_NETWORK' || err.message?.includes('Network')) {
-        setError('Cannot connect to server. Please make sure the backend is running.');
+        setError('We can\u2019t reach GMC Lanka right now. Please check your connection and try again.');
       } else if (err.response?.status === 401) {
         setError('Invalid email or password. Please try again.');
       } else {
@@ -97,8 +103,11 @@ export default function LoginModal({ onClose, onSwitchToRegister, onForgotPasswo
         <form onSubmit={handleSubmit}>
           {/* Email */}
           <div style={{ marginBottom: '1.1rem' }}>
-            <label style={labelStyle}>EMAIL</label>
+            <label htmlFor="login-email" style={labelStyle}>EMAIL</label>
             <input
+              id="login-email"
+              autoComplete="email"
+              autoFocus
               type="email"
               placeholder="name@company.com"
               value={form.email}
@@ -110,8 +119,10 @@ export default function LoginModal({ onClose, onSwitchToRegister, onForgotPasswo
 
           {/* Password */}
           <div style={{ marginBottom: '0.6rem' }}>
-            <label style={labelStyle}>PASSWORD</label>
+            <label htmlFor="login-password" style={labelStyle}>PASSWORD</label>
             <input
+              id="login-password"
+              autoComplete="current-password"
               type="password"
               placeholder="••••••••••"
               value={form.password}

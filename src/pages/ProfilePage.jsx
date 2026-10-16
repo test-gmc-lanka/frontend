@@ -5,6 +5,7 @@ import { getErrorMessage } from '../utils/formatters';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Avatar from '../components/common/Avatar';
+import ConfirmDialog from '../components/common/ConfirmDialog';
 import toast from 'react-hot-toast';
 
 const MAX_PHOTO_BYTES = 10 * 1024 * 1024; // matches spring.servlet.multipart.max-file-size
@@ -66,8 +67,10 @@ export default function ProfilePage() {
     }
   };
 
+  const [confirmRemovePhoto, setConfirmRemovePhoto] = useState(false);
+
   const handleRemovePhoto = async () => {
-    if (!window.confirm('Remove your profile photo?')) return;
+    setConfirmRemovePhoto(false);
     setUploadingPhoto(true);
     try {
       const { data } = await removeAvatar();
@@ -145,7 +148,7 @@ export default function ProfilePage() {
                     {profile?.profileImageUrl ? 'Change photo' : 'Upload photo'}
                   </button>
                   {profile?.profileImageUrl && (
-                    <> · <button type="button" onClick={handleRemovePhoto} style={{ ...linkButtonStyle, color: 'var(--danger)' }}>Remove photo</button></>
+                    <> · <button type="button" onClick={() => setConfirmRemovePhoto(true)} style={{ ...linkButtonStyle, color: 'var(--danger)' }}>Remove photo</button></>
                   )}
                 </>
               )}
@@ -234,8 +237,9 @@ export default function ProfilePage() {
                   <input type="password" className="form-input" style={{ paddingLeft: '2.5rem' }}
                     value={pwdForm.newPassword}
                     onChange={(e) => setPwdForm({ ...pwdForm, newPassword: e.target.value })}
-                    placeholder="Min. 6 characters"
-                    minLength={6}
+                    placeholder="Min. 8 characters"
+                    minLength={8}
+                    maxLength={72}
                     required
                   />
                 </div>
@@ -247,6 +251,16 @@ export default function ProfilePage() {
           </div>
         )}
       </div>
+      {confirmRemovePhoto && (
+        <ConfirmDialog
+          title="Remove your profile photo?"
+          message="Your initial will be shown instead."
+          confirmLabel="Remove photo"
+          tone="danger"
+          onConfirm={handleRemovePhoto}
+          onCancel={() => setConfirmRemovePhoto(false)}
+        />
+      )}
     </div>
   );
 }

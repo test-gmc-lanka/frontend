@@ -23,3 +23,8 @@ export const adminUploadMaintenanceImages = (files) => {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 };
+// Hide a review from the product page (or show it again)
+export const adminSetFeedbackVisibility = (id, hidden) =>
+  api.patch(`/admin/feedback/${id}/visibility`, null, { params: { hidden } });
+// Includes archived products (the public catalog hides them)
+export const adminGetProducts = () => api.get('/admin/products');

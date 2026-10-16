@@ -13,3 +13,6 @@ export const uploadProductImages = (files) => {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 };
+export const getProductReviews = (id) => api.get(`/products/${id}/reviews`);
+// Archive (active=false) or restore (active=true) a product
+export const setProductActive = (id, active) => api.patch(`/products/${id}/active`, null, { params: { active } });

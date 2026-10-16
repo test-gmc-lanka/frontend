@@ -1,9 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FiPackage, FiFilter, FiArrowRight, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { useNavigate, Link } from 'react-router-dom';
+import { FiPackage, FiFilter, FiArrowRight, FiChevronRight } from 'react-icons/fi';
 import { getMyOrders } from '../api/orders';
-import { formatLKR, formatDate } from '../utils/formatters';
+import { formatLKR, formatDate, formatOrderNo } from '../utils/formatters';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import Pagination, { clampPage } from '../components/common/Pagination';
 import toast from 'react-hot-toast';
 
 const PAGE_SIZE = 4;
@@ -42,27 +43,6 @@ function StatusBadge({ status }) {
 }
 
 /* ── Pagination button ──────────────────────────────────────────────────── */
-function PagBtn({ active, disabled, onClick, children }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        minWidth: 36, height: 36,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        border: `1px solid ${active ? '#1e3a5c' : '#d1d5db'}`,
-        borderRadius: 6,
-        background: active ? '#1e3a5c' : '#fff',
-        color: active ? '#fff' : '#374151',
-        fontSize: '0.875rem', fontWeight: active ? 700 : 400,
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.4 : 1,
-      }}
-    >
-      {children}
-    </button>
-  );
-}
 
 /* ── Component ──────────────────────────────────────────────────────────── */
 export default function OrdersPage() {
@@ -86,10 +66,8 @@ export default function OrdersPage() {
     [orders, statusFilter],
   );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
-  const startIdx = filtered.length === 0 ? 0 : (page - 1) * PAGE_SIZE + 1;
-  const endIdx = Math.min(page * PAGE_SIZE, filtered.length);
+  const safePage = clampPage(page, filtered.length, PAGE_SIZE);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   if (loading) return <div style={{ background: '#eef2f7', minHeight: '100vh' }}><LoadingSpinner /></div>;
 
@@ -99,7 +77,7 @@ export default function OrdersPage() {
 
         {/* ── Breadcrumb ────────────────────────────────────────────────── */}
         <div style={{ fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.06em', color: '#9ca3af', marginBottom: '0.75rem' }}>
-          <span style={{ cursor: 'pointer' }} onClick={() => navigate('/')}>ACCOUNT</span>
+          <Link to="/profile" style={{ color: 'inherit', textDecoration: 'none' }}>ACCOUNT</Link>
           <span style={{ margin: '0 0.4rem' }}>›</span>
           <span style={{ color: '#1e3a5c' }}>ORDERS</span>
         </div>
@@ -151,7 +129,7 @@ export default function OrdersPage() {
           <div style={{ background: '#fff', borderRadius: 12, border: '1px solid #e5e7eb', overflow: 'hidden' }}>
 
             {/* Table */}
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div className="scroll-x"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e5e7eb' }}>
                   {['ORDER ID', 'DATE', 'TOTAL', 'STATUS', 'ACTION'].map((h) => (
@@ -180,7 +158,7 @@ export default function OrdersPage() {
                     {/* Order ID */}
                     <td style={{ padding: '1.125rem 1.25rem' }}>
                       <span style={{ fontWeight: 700, color: '#1e3a5c', fontSize: '0.9rem' }}>
-                        #GMC-{1000 + order.orderId}
+                        {formatOrderNo(order.orderId)}
                       </span>
                     </td>
                     {/* Date */}
@@ -194,6 +172,9 @@ export default function OrdersPage() {
                     {/* Status */}
                     <td style={{ padding: '1.125rem 1.25rem' }}>
                       <StatusBadge status={order.status} />
+                      {order.paymentMethod === 'CARD' && order.paymentStatus !== 'COMPLETED' && order.status !== 'CANCELLED' && (
+                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: '#b45309', marginTop: 4 }}>Awaiting payment</div>
+                      )}
                     </td>
                     {/* Action */}
                     <td style={{ padding: '1.125rem 1.25rem' }}>
@@ -212,27 +193,17 @@ export default function OrdersPage() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
 
             {/* Pagination row */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderTop: '1px solid #f1f5f9' }}>
-              <span style={{ fontSize: '0.8rem', color: '#9ca3af' }}>
-                Showing {startIdx} to {endIdx} of {filtered.length} order{filtered.length !== 1 ? 's' : ''}
-              </span>
-              {totalPages > 1 && (
-                <div style={{ display: 'flex', gap: '0.35rem' }}>
-                  <PagBtn disabled={page === 1} onClick={() => setPage((p) => p - 1)}>
-                    <FiChevronLeft size={14} />
-                  </PagBtn>
-                  {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map((n) => (
-                    <PagBtn key={n} active={page === n} onClick={() => setPage(n)}>{n}</PagBtn>
-                  ))}
-                  <PagBtn disabled={page === totalPages} onClick={() => setPage((p) => p + 1)}>
-                    <FiChevronRight size={14} />
-                  </PagBtn>
-                </div>
-              )}
-            </div>
+            <Pagination
+              page={safePage}
+              totalItems={filtered.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+              itemLabel="orders"
+              style={{ borderTop: '1px solid #f1f5f9' }}
+            />
           </div>
         )}
       </div>

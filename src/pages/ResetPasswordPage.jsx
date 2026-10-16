@@ -4,7 +4,7 @@ import { FiLock, FiCheckCircle, FiAlertTriangle, FiArrowRight } from 'react-icon
 import { resetPassword } from '../api/auth';
 import { getErrorMessage } from '../utils/formatters';
 
-const MIN_LENGTH = 6;
+const MIN_LENGTH = 8;
 
 export default function ResetPasswordPage({ onLoginClick, onForgotPassword }) {
   const [params] = useSearchParams();

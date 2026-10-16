@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiShoppingCart, FiArrowRight, FiCheckCircle, FiStar } from 'react-icons/fi';
-import { getProduct } from '../api/products';
+import { FiShoppingCart, FiArrowRight } from 'react-icons/fi';
+import { getProduct, getProductReviews } from '../api/products';
+import { Stars } from '../components/common/StarRating';
 import { addToCart } from '../api/cart';
 import { useAuth } from '../context/AuthContext';
 import { formatLKR, getErrorMessage } from '../utils/formatters';
@@ -15,63 +16,13 @@ function buildGallery(product) {
   return [product.imageUrl, ...images.filter((img) => img !== product.imageUrl)];
 }
 
-/* ── Spec generator ─────────────────────────────────────────────────────── */
+/* ── Specifications: only data the admin actually entered ────────────── */
 function buildSpecs(product) {
-  const mat = product.material || 'Natural Wood';
-  const cat = product.category?.name || '';
-  if (cat === 'Furniture') {
-    return [
-      { param: 'Material', spec: mat },
-      { param: 'Finish', spec: 'Smooth Lacquer Coat' },
-      { param: 'Weight Capacity', spec: '150 kg' },
-      { param: 'Assembly', spec: 'Minimal assembly required' },
-    ];
-  }
-  if (cat === 'CNC Art Panels') {
-    return [
-      { param: 'Material', spec: mat },
-      { param: 'Thickness', spec: '18 mm' },
-      { param: 'Cut Precision', spec: '0.1 mm' },
-      { param: 'Surface', spec: 'Sanded & Sealed' },
-    ];
-  }
   return [
-    { param: 'Material', spec: mat },
-    { param: 'Finish', spec: 'Premium Coat' },
-    { param: 'Dimensions', spec: 'Custom on request' },
-    { param: 'Stock', spec: `${product.stockQuantity || 0} units available` },
-  ];
-}
-
-/* ── Feature bullets generator ─────────────────────────────────────────── */
-function buildFeatures(product) {
-  const cat = product.category?.name || '';
-  if (cat === 'Furniture') return ['Solid ' + (product.material || 'wood') + ' construction', 'Premium lacquer finish'];
-  if (cat === 'CNC Art Panels') return ['High-precision CNC routing', 'Custom design available'];
-  if (cat === 'Home Decor') return ['Handcrafted artisan quality', 'Eco-friendly materials'];
-  if (cat === 'Outdoor Products') return ['Weather-resistant treatment', 'Durable hardwood frame'];
-  return ['Quality craftsmanship', 'Made to last'];
-}
-
-/* ── Mock reviews ───────────────────────────────────────────────────────── */
-const MOCK_REVIEWS = [
-  { name: 'Kamal P.', rating: 5, text: '"Exceptional quality. The craftsmanship is outstanding and delivery was right on time. Highly recommend GMC Lanka!"' },
-  { name: 'Nimal S.', rating: 4, text: '"Solid build quality. Very happy with the purchase. The team was helpful during the entire process."' },
-  { name: 'Ayesha R.', rating: 5, text: '"Beautiful product that perfectly matches our home decor. Worth every rupee. Will definitely order again."' },
-];
-
-function Stars({ rating, size = 14 }) {
-  return (
-    <div style={{ display: 'flex', gap: 2 }}>
-      {[1, 2, 3, 4, 5].map((s) => (
-        <FiStar
-          key={s}
-          size={size}
-          style={{ color: s <= rating ? '#f59e0b' : '#d1d5db', fill: s <= rating ? '#f59e0b' : 'transparent' }}
-        />
-      ))}
-    </div>
-  );
+    product.category?.name && { param: 'Category', spec: product.category.name },
+    product.material && { param: 'Material', spec: product.material },
+    { param: 'Availability', spec: (product.stockQuantity || 0) > 0 ? `${product.stockQuantity} in stock` : 'Out of stock' },
+  ].filter(Boolean);
 }
 
 /* ── Component ──────────────────────────────────────────────────────────── */
@@ -84,6 +35,13 @@ export default function ProductDetailPage({ onLoginClick }) {
   const [adding, setAdding] = useState(false);
   const [activeThumb, setActiveThumb] = useState(0);
   const [quantity] = useState(1);
+
+  const [reviews, setReviews] = useState(null);
+
+  useEffect(() => {
+    setReviews(null);
+    getProductReviews(id).then((r) => setReviews(r.data)).catch(() => {});
+  }, [id]);
 
   useEffect(() => {
     setActiveThumb(0);
@@ -114,15 +72,17 @@ export default function ProductDetailPage({ onLoginClick }) {
   const gallery = buildGallery(product);
   const mainImage = gallery[activeThumb] || gallery[0];
   const specs = buildSpecs(product);
-  const features = buildFeatures(product);
   const inStock = (product.stockQuantity || 0) > 0;
+  // Price 0 means "price on request" across the site; it must never be bought at LKR 0.00
+  const isQuote = Number(product.price) === 0;
+  const archived = product.active === false;
 
   return (
     <div style={{ background: '#fff', minHeight: '100vh', color: '#111827' }}>
 
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '2rem 1.5rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '420px 1fr', gap: '3rem', alignItems: 'start' }}>
+        <div className="layout-product-hero">
 
           {/* Left — image + thumbnails */}
           <div>
@@ -138,16 +98,19 @@ export default function ProductDetailPage({ onLoginClick }) {
             {gallery.length > 1 && (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
                 {gallery.map((img, i) => (
-                  <div
+                  <button
                     key={img}
+                    type="button"
                     onClick={() => setActiveThumb(i)}
+                    aria-label={`View image ${i + 1} of ${gallery.length}`}
+                    aria-pressed={activeThumb === i}
                     style={{
                       border: activeThumb === i ? '2px solid #1e3a5c' : '1px solid #e5e7eb',
-                      borderRadius: 4, overflow: 'hidden', cursor: 'pointer',
+                      borderRadius: 4, overflow: 'hidden', cursor: 'pointer', padding: 0, background: 'none',
                     }}
                   >
                     <img src={img} alt="" style={{ width: '100%', height: 72, objectFit: 'cover', display: 'block' }} />
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
@@ -157,8 +120,8 @@ export default function ProductDetailPage({ onLoginClick }) {
           <div style={{ paddingTop: '1rem' }}>
             {/* In Stock badge */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', color: inStock ? '#6b7280' : '#ef4444' }}>
-                {inStock ? 'IN STOCK' : 'OUT OF STOCK'}
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', color: inStock && !archived ? '#6b7280' : '#ef4444' }}>
+                {archived ? 'NO LONGER AVAILABLE' : inStock ? 'IN STOCK' : 'OUT OF STOCK'}
               </span>
               <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
             </div>
@@ -168,7 +131,7 @@ export default function ProductDetailPage({ onLoginClick }) {
             </h1>
 
             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#111827', marginBottom: '0.875rem' }}>
-              {formatLKR(product.price)}
+              {isQuote ? 'Price on request' : formatLKR(product.price)}
             </div>
 
             {product.description && (
@@ -177,20 +140,10 @@ export default function ProductDetailPage({ onLoginClick }) {
               </p>
             )}
 
-            {/* Feature bullets */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '1.75rem' }}>
-              {features.map((f, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <FiCheckCircle size={15} style={{ color: '#6b7280', flexShrink: 0 }} />
-                  <span style={{ fontSize: '0.875rem', color: '#374151' }}>{f}</span>
-                </div>
-              ))}
-            </div>
-
             {/* Buttons */}
-            {!isAdmin && !isTechnician && (
+            {!isAdmin && !isTechnician && !archived && (
               <div style={{ display: 'flex', gap: '0.875rem', flexWrap: 'wrap' }}>
-                {inStock ? (
+                {inStock && !isQuote ? (
                   <button
                     onClick={handleAddToCart}
                     disabled={adding}
@@ -211,13 +164,13 @@ export default function ProductDetailPage({ onLoginClick }) {
                   onClick={() => user ? navigate('/appointments') : onLoginClick()}
                   style={{
                     display: 'flex', alignItems: 'center', gap: '0.5rem',
-                    background: 'transparent', color: '#1e3a5c',
+                    background: isQuote ? '#1e3a5c' : 'transparent', color: isQuote ? '#fff' : '#1e3a5c',
                     border: '1.5px solid #1e3a5c', borderRadius: 6,
                     padding: '0.75rem 1.5rem', fontSize: '0.9rem', fontWeight: 600,
                     cursor: 'pointer',
                   }}
                 >
-                  Book a Demo
+                  {isQuote ? 'Request a quote' : 'Book a consultation'}
                 </button>
               </div>
             )}
@@ -230,32 +183,19 @@ export default function ProductDetailPage({ onLoginClick }) {
 
       {/* ── Description + Specs ───────────────────────────────────────────── */}
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '3rem 1.5rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem' }}>
+        <div className="layout-two-col">
 
           {/* Product Description */}
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', marginBottom: '1rem' }}>Product Description</h2>
-            <p style={{ color: '#4b5563', lineHeight: 1.75, fontSize: '0.9rem', marginBottom: '1.25rem' }}>
-              {product.description || `${product.name} is a premium handcrafted product from GMC Lanka Creations, built with attention to detail and quality materials. Designed to meet both functional and aesthetic requirements.`}
+            <p style={{ color: product.description ? '#4b5563' : '#9ca3af', lineHeight: 1.75, fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>
+              {product.description || 'No description has been added for this product yet.'}
             </p>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              {[
-                `Made from premium ${product.material || 'natural wood'}`,
-                'Handcrafted by skilled artisans',
-                'Quality checked before delivery',
-                'Custom sizing available on request',
-              ].map((item, i) => (
-                <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '0.5rem', fontSize: '0.875rem', color: '#4b5563' }}>
-                  <span style={{ marginTop: 2, color: '#9ca3af' }}>○</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
           </div>
 
           {/* Technical Specifications */}
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', marginBottom: '1rem' }}>Technical Specifications</h2>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', marginBottom: '1rem' }}>Specifications</h2>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
               <thead>
                 <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
@@ -264,8 +204,8 @@ export default function ProductDetailPage({ onLoginClick }) {
                 </tr>
               </thead>
               <tbody>
-                {specs.map((s, i) => (
-                  <tr key={i} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                {specs.map((s) => (
+                  <tr key={s.param} style={{ borderBottom: '1px solid #e5e7eb' }}>
                     <td style={{ padding: '0.75rem 1rem', color: '#374151', fontWeight: 500 }}>{s.param}</td>
                     <td style={{ padding: '0.75rem 1rem', color: '#6b7280' }}>{s.spec}</td>
                   </tr>
@@ -279,41 +219,56 @@ export default function ProductDetailPage({ onLoginClick }) {
       {/* ── Divider ───────────────────────────────────────────────────────── */}
       <div style={{ borderTop: '1px solid #e5e7eb' }} />
 
-      {/* ── Customer Reviews ──────────────────────────────────────────────── */}
+      {/* ── Customer Reviews (verified purchases only) ──────────────────────── */}
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '3rem 1.5rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
           <div>
             <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', marginBottom: '0.4rem' }}>Customer Reviews</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Stars rating={5} size={16} />
-              <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>4.8 stars (12 reviews)</span>
-            </div>
+            {reviews && reviews.reviewCount > 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Stars value={reviews.averageRating} size={16} />
+                <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
+                  {Number(reviews.averageRating).toFixed(1)} out of 5 · {reviews.reviewCount} review{reviews.reviewCount !== 1 ? 's' : ''}
+                </span>
+              </div>
+            ) : (
+              <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>No reviews yet.</span>
+            )}
           </div>
-          <button
-            onClick={() => user ? navigate('/appointments') : onLoginClick()}
-            style={{
-              background: 'transparent', color: '#1e3a5c',
-              border: '1.5px solid #1e3a5c', borderRadius: 6,
-              padding: '0.55rem 1.1rem', fontSize: '0.875rem', fontWeight: 600,
-              cursor: 'pointer',
-            }}
-          >
-            Write a Review
-          </button>
+          <div style={{ fontSize: '0.82rem', color: '#6b7280', maxWidth: 320, textAlign: 'right' }}>
+            Bought this? You can review it from your delivered order in{' '}
+            <button
+              onClick={() => (user ? navigate('/orders') : onLoginClick())}
+              style={{ background: 'none', border: 'none', padding: 0, color: '#1e3a5c', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', fontSize: 'inherit' }}
+            >
+              My Orders
+            </button>.
+          </div>
         </div>
 
         {/* Review cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-          {MOCK_REVIEWS.map((r, i) => (
-            <div key={i} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '1.25rem', background: '#fff' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#111827' }}>{r.name}</span>
-                <Stars rating={r.rating} size={13} />
+        {reviews && reviews.reviewCount > 0 ? (
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
+            {reviews.reviews.map((r) => (
+              <div key={r.reviewId} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '1.25rem', background: '#fff' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                  <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#111827' }}>{r.reviewerName}</span>
+                  <Stars value={r.rating} size={13} />
+                </div>
+                <div style={{ fontSize: '0.72rem', color: '#9ca3af', marginBottom: '0.6rem' }}>
+                  {r.verifiedPurchase && <span style={{ color: '#15803d', fontWeight: 700 }}>✓ Verified purchase · </span>}
+                  {new Date(r.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  {r.edited && ' · Edited'}
+                </div>
+                <p style={{ fontSize: '0.85rem', color: '#4b5563', lineHeight: 1.65, margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{r.comment}</p>
               </div>
-              <p style={{ fontSize: '0.85rem', color: '#6b7280', lineHeight: 1.65, fontStyle: 'italic', margin: 0 }}>{r.text}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ border: '1px dashed #e5e7eb', borderRadius: 8, padding: '2rem', textAlign: 'center', color: '#9ca3af', fontSize: '0.9rem' }}>
+            Be the first to review this product after your order is delivered.
+          </div>
+        )}
       </div>
 
     </div>

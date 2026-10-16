@@ -4,6 +4,7 @@ import { adminGetAppointments, adminUpdateAppointmentStatus, adminRescheduleAppo
 import { getErrorMessage } from '../../utils/formatters';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import ImageThumbs from '../../components/common/ImageThumbs';
 import Pagination, { clampPage } from '../../components/common/Pagination';
 import toast from 'react-hot-toast';
 
@@ -245,7 +246,12 @@ export default function AdminAppointments() {
                   {/* Customer row */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: '1rem', color: '#6b7280', fontSize: '0.85rem' }}>
                     <FiUser size={14} />
-                    <span>{a.userName} (Customer ID: #{a.userId ? 8000 + a.userId : a.appointmentId + 8800})</span>
+                    <span>{a.userName} · Customer #{a.userId} · Appointment #{a.appointmentId}</span>
+                    {a.categoryName && (
+                      <span style={{ marginLeft: 8, background: '#e6f4f1', color: '#0f766e', fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>
+                        {a.categoryName}
+                      </span>
+                    )}
                   </div>
 
                   {/* Date & Meeting type boxes */}
@@ -281,6 +287,14 @@ export default function AdminAppointments() {
                     <p style={{ fontStyle: 'italic', color: '#374151', fontSize: '0.875rem', margin: 0, lineHeight: 1.5 }}>
                       &ldquo;{a.message}&rdquo;
                     </p>
+                    {a.imageUrls?.length > 0 && (
+                      <div style={{ marginTop: '0.6rem' }}>
+                        <div style={{ fontSize: '0.72rem', color: '#9ca3af', fontWeight: 500, marginBottom: 4 }}>
+                          Customer images ({a.imageUrls.length}) — click to enlarge
+                        </div>
+                        <ImageThumbs urls={a.imageUrls} size={64} label="Customer image" />
+                      </div>
+                    )}
                   </div>
 
                   {a.adminNote && (
@@ -431,28 +445,6 @@ export default function AdminAppointments() {
         );
       })()}
 
-      {/* Footer */}
-      <footer style={{
-        marginTop: '4rem', borderTop: '1px solid #e5e7eb',
-        padding: '1.5rem 2.5rem',
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
-        flexWrap: 'wrap', gap: '1rem',
-      }}>
-        <div>
-          <div style={{ fontWeight: 700, color: '#111827', fontSize: '0.95rem', marginBottom: 4 }}>GMC Lanka</div>
-          <div style={{ fontSize: '0.78rem', color: '#9ca3af', marginBottom: 4, maxWidth: 220 }}>
-            Industrial Modernism in Engineering Services and Solutions.
-          </div>
-          <div style={{ fontSize: '0.75rem', color: '#9ca3af' }}>
-            &copy; 2024 Industrial Modernism Corp. All rights reserved.
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-          {['Privacy Policy', 'Terms of Service', 'System Status', 'Technical Support'].map((t) => (
-            <a key={t} href="#" style={{ fontSize: '0.8rem', color: '#9ca3af', textDecoration: 'none' }}>{t}</a>
-          ))}
-        </div>
-      </footer>
     </div>
   );
 }

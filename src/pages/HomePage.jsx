@@ -1,29 +1,24 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { FiShoppingCart, FiPackage, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { Link, useNavigate } from 'react-router-dom';
+import { FiShoppingCart, FiPackage } from 'react-icons/fi';
 import { getProducts, getCategories } from '../api/products';
 import { addToCart } from '../api/cart';
 import { useAuth } from '../context/AuthContext';
 import { formatLKR, getErrorMessage } from '../utils/formatters';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import Pagination, { clampPage } from '../components/common/Pagination';
 import toast from 'react-hot-toast';
 
 const PAGE_SIZE = 8;
 
 /* ── badge by category name ─────────────────────────────────────────────── */
+// Badges reflect real data only: availability first, otherwise the category
 function getBadge(product) {
-  const cat = (product.category?.name || '').toLowerCase();
-  if (cat.includes('cnc')) return { text: 'CNC SERIES', bg: '#0f766e' };
-  if (cat.includes('artisan')) return { text: 'ARTISAN', bg: '#1e3a5c' };
-  if (cat.includes('precision') || cat.includes('parts')) return { text: 'PRECISION', bg: '#374151' };
-  if (cat.includes('furniture')) {
-    return product.stockQuantity > 20
-      ? { text: 'IN STOCK', bg: '#6b7280' }
-      : { text: 'SIGNATURE', bg: '#5c3317' };
-  }
-  if (product.price > 100000) return { text: 'SIGNATURE', bg: '#5c3317' };
-  if (product.stockQuantity > 25) return { text: 'IN STOCK', bg: '#6b7280' };
-  return { text: "ARTIST'S PROOF", bg: '#4b5563' };
+  const stock = product.stockQuantity || 0;
+  if (Number(product.price) === 0) return { text: 'PRICE ON REQUEST', bg: '#1e3a5c' };
+  if (stock === 0) return { text: 'OUT OF STOCK', bg: '#9ca3af' };
+  if (stock <= 5) return { text: `ONLY ${stock} LEFT`, bg: '#b45309' };
+  return product.category?.name ? { text: product.category.name.toUpperCase(), bg: '#0f766e' } : null;
 }
 
 /* ── component ──────────────────────────────────────────────────────────── */
@@ -50,7 +45,7 @@ export default function HomePage({ onLoginClick }) {
       .catch((err) => {
         const msg =
           err.code === 'ERR_NETWORK' || err.message?.includes('Network')
-            ? 'Cannot connect to the server. Make sure the backend is running on port 8080.'
+            ? 'We can\u2019t reach GMC Lanka right now. Please check your connection and refresh.'
             : 'Failed to load products. Please refresh.';
         setLoadError(msg);
         toast.error(msg, { duration: 5000 });
@@ -70,10 +65,11 @@ export default function HomePage({ onLoginClick }) {
     return list;
   }, [products, selectedCategory, sort]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const safePage = clampPage(page, filtered.length, PAGE_SIZE);
+  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const handleAddToCart = async (e, productId) => {
+    e.preventDefault(); // the button sits inside the product link
     e.stopPropagation();
     if (!user) { onLoginClick(); return; }
     if (isAdmin || isTechnician) return;
@@ -154,15 +150,15 @@ export default function HomePage({ onLoginClick }) {
             <div style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>Try a different category or filter</div>
           </div>
         ) : (
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.25rem' }}>
+          <div className="grid-products">
             {paginated.map((p) => {
               const badge = getBadge(p);
               const isQuote = p.price === 0;
               return (
-                <div
+                <Link
                   key={p.productId}
-                  onClick={() => navigate(`/products/${p.productId}`)}
-                  style={{ border: '1px solid #e5e7eb', borderRadius: 4, overflow: 'hidden', cursor: 'pointer', background: '#fff', transition: 'box-shadow 0.2s' }}
+                  to={`/products/${p.productId}`}
+                  style={{ display: 'block', color: 'inherit', textDecoration: 'none', border: '1px solid #e5e7eb', borderRadius: 4, overflow: 'hidden', background: '#fff', transition: 'box-shadow 0.2s' }}
                   onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
                 >
@@ -173,12 +169,14 @@ export default function HomePage({ onLoginClick }) {
                     ) : (
                       <div style={{ height: 200, background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🪵</div>
                     )}
-                    <div style={{
-                      position: 'absolute', top: '0.5rem', left: '0.5rem',
-                      background: badge.bg, color: '#fff',
-                      fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.08em',
-                      padding: '0.2rem 0.55rem', borderRadius: 2,
-                    }}>{badge.text}</div>
+                    {badge && (
+                      <div style={{
+                        position: 'absolute', top: '0.5rem', left: '0.5rem',
+                        background: badge.bg, color: '#fff',
+                        fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.08em',
+                        padding: '0.2rem 0.55rem', borderRadius: 2,
+                      }}>{badge.text}</div>
+                    )}
                   </div>
 
                   {/* Body */}
@@ -190,13 +188,14 @@ export default function HomePage({ onLoginClick }) {
                     }}>{p.description}</div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ fontSize: '1rem', fontWeight: 700, color: '#111827' }}>
-                        {isQuote ? 'Quote' : formatLKR(p.price)}
+                        {isQuote ? 'Price on request' : formatLKR(p.price)}
                       </div>
                       {!isAdmin && !isTechnician && !isQuote && p.stockQuantity > 0 && (
                         <button
                           onClick={(e) => handleAddToCart(e, p.productId)}
                           disabled={addingId === p.productId}
                           title="Add to cart"
+                          aria-label={`Add ${p.name} to cart`}
                           style={{
                             background: addingId === p.productId ? '#2d5a8c' : '#1e3a5c',
                             color: '#fff', border: 'none', borderRadius: 4,
@@ -209,37 +208,33 @@ export default function HomePage({ onLoginClick }) {
                       )}
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
         )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
-          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.35rem', marginTop: '2.5rem' }}>
-            <PagBtn onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
-              <FiChevronLeft size={14} />
-            </PagBtn>
-            {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map((n) => (
-              <PagBtn key={n} active={page === n} onClick={() => setPage(n)}>{n}</PagBtn>
-            ))}
-            {totalPages > 5 && <span style={{ fontSize: '0.875rem', color: '#9ca3af', padding: '0 0.25rem' }}>...</span>}
-            <PagBtn onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
-              <FiChevronRight size={14} />
-            </PagBtn>
-          </div>
+        {filtered.length > 0 && (
+          <Pagination
+            page={safePage}
+            totalItems={filtered.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={(n) => { setPage(n); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            itemLabel="products"
+            style={{ marginTop: '2rem', padding: '0.9rem 0' }}
+          />
         )}
       </div>
 
       {/* ── Custom CNC Solutions CTA ─────────────────────────────────────── */}
       <div style={{ background: '#f9fafb', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb', margin: '1rem 0' }}>
-        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '3rem 1.5rem', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem', alignItems: 'center' }}>
+        <div className="layout-split" style={{ maxWidth: 1120, margin: '0 auto', padding: '3rem 1.5rem', alignItems: 'center' }}>
           <div>
             <h2 style={{ fontSize: '1.625rem', fontWeight: 800, color: '#111827', marginBottom: '1rem' }}>Custom CNC Solutions</h2>
             <p style={{ color: '#6b7280', lineHeight: 1.75, fontSize: '0.9rem', marginBottom: '1.5rem' }}>
               Need something specific? We offer bespoke manufacturing services for both industrial parts and unique
-              furniture pieces. Our state-of-the-art CNC machines ensure precision up to 0.01mm.
+              furniture pieces, made on our own CNC machines.
             </p>
             <button
               onClick={() => user ? navigate('/appointments') : onLoginClick()}
@@ -285,25 +280,3 @@ function FilterChip({ active, onClick, children }) {
   );
 }
 
-function PagBtn({ active, disabled, onClick, children }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        minWidth: 32, height: 32,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        border: `1px solid ${active ? '#1e3a5c' : '#d1d5db'}`,
-        borderRadius: 4,
-        background: active ? '#1e3a5c' : '#fff',
-        color: active ? '#fff' : '#374151',
-        fontSize: '0.875rem', fontWeight: active ? 700 : 400,
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        opacity: disabled ? 0.4 : 1,
-        padding: '0 0.4rem',
-      }}
-    >
-      {children}
-    </button>
-  );
-}

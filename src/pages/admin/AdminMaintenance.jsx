@@ -5,11 +5,15 @@ import { adminGetUsers } from '../../api/users';
 import { getProducts } from '../../api/products';
 import { formatLKR, getErrorMessage } from '../../utils/formatters';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
+import Pagination, { clampPage } from '../../components/common/Pagination';
+import { deadlineInfo, formatDeadline, todayInputValue } from '../../utils/deadline';
 import toast from 'react-hot-toast';
+
+const PAGE_SIZE = 10;
 
 const emptyForm = {
   taskType: 'PRODUCT', description: '', productId: '', title: '',
-  technicianId: '', cost: '', imageUrls: [],
+  technicianId: '', cost: '', imageUrls: [], deadline: '',
 };
 
 export default function AdminMaintenance() {
@@ -20,6 +24,7 @@ export default function AdminMaintenance() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [page, setPage] = useState(1);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -69,6 +74,7 @@ export default function AdminMaintenance() {
         cost: Number(form.cost),
         productId: isCustom ? null : Number(form.productId),
         title: isCustom ? form.title.trim() : null,
+        deadline: form.deadline,
         imageUrls: form.imageUrls,
       });
       toast.success('Maintenance task assigned!');
@@ -81,6 +87,11 @@ export default function AdminMaintenance() {
       setSaving(false);
     }
   };
+
+  // Open tasks first, soonest deadline on top
+  const sortedTasks = [...tasks].sort((a, b) => ((a.status === 'COMPLETED') - (b.status === 'COMPLETED'))
+    || (a.deadline || '9999-12-31').localeCompare(b.deadline || '9999-12-31'));
+  const safePage = clampPage(page, sortedTasks.length, PAGE_SIZE);
 
   if (loading) return <LoadingSpinner />;
 
@@ -102,12 +113,13 @@ export default function AdminMaintenance() {
               <th>Product / Design</th>
               <th>Images</th>
               <th>Technician</th>
+              <th>Deadline</th>
               <th>Cost</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            {tasks.map((t) => (
+            {sortedTasks.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE).map((t) => (
               <tr key={t.maintenanceId}>
                 <td style={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.description}</td>
                 <td>
@@ -131,6 +143,17 @@ export default function AdminMaintenance() {
                   ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                 </td>
                 <td>{t.technicianName}</td>
+                <td>
+                  {(() => {
+                    const info = deadlineInfo(t.deadline, t.status);
+                    if (!info) return <span style={{ color: 'var(--text-muted)' }}>—</span>;
+                    return (
+                      <span title={formatDeadline(t.deadline)} style={{ background: info.bg, color: info.color, fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+                        {info.label}
+                      </span>
+                    );
+                  })()}
+                </td>
                 <td style={{ fontWeight: 600, color: 'var(--color-primary)' }}>{formatLKR(t.cost)}</td>
                 <td><span className={`badge badge-${t.status?.toLowerCase() === 'completed' ? 'delivered' : 'processing'}`}>{t.status || 'ASSIGNED'}</span></td>
               </tr>
@@ -138,6 +161,8 @@ export default function AdminMaintenance() {
           </tbody>
         </table>
         {tasks.length === 0 && <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No maintenance tasks</div>}
+        <Pagination page={safePage} totalItems={sortedTasks.length} pageSize={PAGE_SIZE}
+          onPageChange={setPage} itemLabel="tasks" style={{ borderTop: '1px solid var(--border)' }} />
       </div>
 
       {/* Assign modal */}
@@ -231,6 +256,19 @@ export default function AdminMaintenance() {
                   <option value="">Select technician</option>
                   {technicians.map((t) => <option key={t.userId} value={t.userId}>{t.name}</option>)}
                 </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label" htmlFor="task-deadline">Deadline *</label>
+                <input
+                  id="task-deadline"
+                  type="date"
+                  className="form-input"
+                  min={todayInputValue()}
+                  value={form.deadline}
+                  onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+                  required
+                />
+                <span className="form-hint">The technician sees this on their task list and in the assignment email.</span>
               </div>
               <div className="form-group">
                 <label className="form-label">Cost (LKR) *</label>

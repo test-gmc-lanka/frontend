@@ -1,23 +1,45 @@
 import { useState, useEffect, useMemo } from 'react';
-import { FiChevronLeft, FiChevronRight, FiChevronDown } from 'react-icons/fi';
+import { FiChevronDown } from 'react-icons/fi';
 import { adminGetOrders, adminUpdateOrderStatus } from '../../api/orders';
-import { formatLKR, formatDate, getErrorMessage } from '../../utils/formatters';
+import { formatLKR, formatDate, getErrorMessage, formatOrderNo } from '../../utils/formatters';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import ConfirmDialog from '../../components/common/ConfirmDialog';
+import Pagination, { clampPage } from '../../components/common/Pagination';
 import toast from 'react-hot-toast';
 
 /* Map backend statuses to the 4-step display */
 const STEPS = [
-  { label: 'PENDING',     backend: 'PENDING',     active: '#f59e0b', border: '#f59e0b' },
-  { label: 'IN PROGRESS', backend: 'PROCESSING',  active: '#f97316', border: '#f97316' },
-  { label: 'COMPLETED',   backend: 'SHIPPED',      active: '#16a34a', border: '#16a34a' },
-  { label: 'DELIVERED',   backend: 'DELIVERED',    active: '#0f766e', border: '#0f766e' },
+  { label: 'PENDING',    backend: 'PENDING',    active: '#f59e0b', border: '#f59e0b' },
+  { label: 'PROCESSING', backend: 'PROCESSING', active: '#f97316', border: '#f97316' },
+  { label: 'SHIPPED',    backend: 'SHIPPED',    active: '#16a34a', border: '#16a34a' },
+  { label: 'DELIVERED',  backend: 'DELIVERED',  active: '#0f766e', border: '#0f766e' },
 ];
 
 const STATUS_ORDER = ['PENDING', 'PROCESSING', 'SHIPPED', 'DELIVERED'];
 
 function statusIndex(backend) {
   return STATUS_ORDER.indexOf(backend);
+}
+
+// Unpaid card orders can only be cancelled until the customer pays (enforced by the backend too)
+function awaitingCardPayment(order) {
+  return order.paymentMethod === 'CARD' && order.paymentStatus !== 'COMPLETED';
+}
+
+function PaymentBadge({ order }) {
+  if (!order.paymentMethod) return null;
+  const method = order.paymentMethod === 'CARD' ? 'Card' : 'COD';
+  let label; let bg; let color;
+  if (order.paymentStatus === 'COMPLETED') { label = 'Paid'; bg = '#dcfce7'; color = '#15803d'; }
+  else if (order.paymentStatus === 'REFUNDED') { label = 'Refunded'; bg = '#ede9fe'; color = '#6d28d9'; }
+  else if (order.status === 'CANCELLED') { label = 'Not charged'; bg = '#f3f4f6'; color = '#6b7280'; }
+  else if (order.paymentMethod === 'CASH_ON_DELIVERY') { label = 'Collect on delivery'; bg = '#e0f2fe'; color = '#0369a1'; }
+  else { label = 'Awaiting payment'; bg = '#fef3c7'; color = '#b45309'; }
+  return (
+    <span style={{ background: bg, color, fontSize: '0.68rem', fontWeight: 700, padding: '2px 8px', borderRadius: 20, whiteSpace: 'nowrap' }}>
+      {method} · {label}
+    </span>
+  );
 }
 
 function stepLabel(backend) {
@@ -33,8 +55,8 @@ function StatusBadge({ status }) {
     CANCELLED:  { bg: '#fee2e2', color: '#b91c1c'  },
   };
   const label = {
-    PENDING: 'PENDING', PROCESSING: 'IN PROGRESS',
-    SHIPPED: 'COMPLETED', DELIVERED: 'DELIVERED', CANCELLED: 'CANCELLED',
+    PENDING: 'PENDING', PROCESSING: 'PROCESSING',
+    SHIPPED: 'SHIPPED', DELIVERED: 'DELIVERED', CANCELLED: 'CANCELLED',
   };
   const s = map[status] || { bg: '#f3f4f6', color: '#6b7280' };
   return (
@@ -51,6 +73,7 @@ function StatusBadge({ status }) {
 function StepButtons({ order, onStatusChange, updating }) {
   const currentIdx = statusIndex(order.status);
   const isCancelled = order.status === 'CANCELLED';
+  const locked = awaitingCardPayment(order);
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 0, borderTop: '1px solid #f3f4f6', marginTop: '0.5rem' }}>
@@ -58,7 +81,9 @@ function StepButtons({ order, onStatusChange, updating }) {
         const isActive = idx === currentIdx;
         const isPast = idx < currentIdx;
         const isFuture = idx > currentIdx;
-        const isDisabled = updating || isCancelled || (isActive);
+        // Orders only move one step forward (enforced by the backend too)
+        const isNext = idx === currentIdx + 1;
+        const isDisabled = updating || isCancelled || isActive || locked || !isNext;
 
         let bg = '#fff';
         let color = step.border;
@@ -79,6 +104,7 @@ function StepButtons({ order, onStatusChange, updating }) {
             key={step.backend}
             disabled={isDisabled}
             onClick={() => !isDisabled && onStatusChange(order.orderId, step.backend)}
+            title={locked && !isCancelled ? 'Waiting for the customer\u2019s card payment' : undefined}
             style={{
               padding: '0.6rem 0', fontSize: '0.72rem', fontWeight: 700,
               letterSpacing: '0.04em', border, background: bg, color,
@@ -104,13 +130,17 @@ export default function AdminOrders() {
   const [updatingId, setUpdatingId] = useState(null);
   const [pendingChange, setPendingChange] = useState(null); // { order, status } awaiting confirmation
 
-  const fetchOrders = (sf) =>
-    adminGetOrders(sf ? { status: sf } : {})
-      .then((r) => setOrders(r.data))
-      .catch(() => toast.error('Failed to load orders'))
-      .finally(() => setLoading(false));
-
-  useEffect(() => { setLoading(true); setPage(1); fetchOrders(statusFilter); }, [statusFilter]);
+  // Ignore responses for a filter that is no longer selected (fast filter changes)
+  useEffect(() => {
+    let current = true;
+    setLoading(true);
+    setPage(1);
+    adminGetOrders(statusFilter ? { status: statusFilter } : {})
+      .then((r) => { if (current) setOrders(r.data); })
+      .catch(() => { if (current) toast.error('Failed to load orders'); })
+      .finally(() => { if (current) setLoading(false); });
+    return () => { current = false; };
+  }, [statusFilter]);
 
   const requestStatusChange = (orderId, status) => {
     const order = orders.find((o) => o.orderId === orderId);
@@ -132,8 +162,7 @@ export default function AdminOrders() {
     }
   };
 
-  const totalPages = Math.max(1, Math.ceil(orders.length / pageSize));
-  const safePage = Math.min(page, totalPages);
+  const safePage = clampPage(page, orders.length, pageSize);
   const paginated = useMemo(
     () => orders.slice((safePage - 1) * pageSize, safePage * pageSize),
     [orders, safePage, pageSize]
@@ -141,8 +170,6 @@ export default function AdminOrders() {
 
   if (loading) return <LoadingSpinner />;
 
-  /* page number buttons — show at most 5 around current */
-  const pageNums = Array.from({ length: totalPages }, (_, i) => i + 1);
 
   return (
     <div style={{ background: '#f0f4f8', minHeight: '100vh', paddingBottom: '3rem' }}>
@@ -175,8 +202,8 @@ export default function AdminOrders() {
           >
             <option value="">Status: All</option>
             <option value="PENDING">Pending</option>
-            <option value="PROCESSING">In Progress</option>
-            <option value="SHIPPED">Completed</option>
+            <option value="PROCESSING">Processing</option>
+            <option value="SHIPPED">Shipped</option>
             <option value="DELIVERED">Delivered</option>
             <option value="CANCELLED">Cancelled</option>
           </select>
@@ -206,11 +233,25 @@ export default function AdminOrders() {
                   <StatusBadge status={order.status} />
                 </div>
                 <div style={{ fontSize: '0.82rem', color: '#6b7280' }}>
-                  Order #GMC-{1000 + order.orderId} &bull; {formatDate(order.orderDate)}
+                  Order {formatOrderNo(order.orderId)} &bull; {formatDate(order.orderDate)}
                 </div>
               </div>
-              <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#0f766e' }}>
-                Rs. {order.totalAmount?.toLocaleString()}
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#0f766e', marginBottom: 4 }}>
+                  {formatLKR(order.totalAmount)}
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'flex-end' }}>
+                  <PaymentBadge order={order} />
+                  {['PENDING', 'PROCESSING'].includes(order.status) && (
+                    <button
+                      onClick={() => requestStatusChange(order.orderId, 'CANCELLED')}
+                      disabled={updatingId === order.orderId}
+                      style={{ background: 'none', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 6, padding: '2px 8px', fontSize: '0.72rem', fontWeight: 600, cursor: 'pointer' }}
+                    >
+                      Cancel order
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -253,6 +294,19 @@ export default function AdminOrders() {
               ))}
             </div>
 
+            {order.shippingAddress && (
+              <div style={{ margin: '0 1.25rem 0.75rem', padding: '0.6rem 0.8rem', background: '#f9fafb', borderRadius: 8, fontSize: '0.8rem', color: '#4b5563', lineHeight: 1.5 }}>
+                <strong style={{ color: '#111827' }}>Deliver to:</strong> {order.shippingName}, {order.shippingAddress}, {order.shippingCity}
+                {order.shippingPostalCode ? ` ${order.shippingPostalCode}` : ''} &bull; {order.shippingPhone}
+                {order.notes && <div style={{ fontStyle: 'italic', marginTop: 2 }}>Note: {order.notes}</div>}
+              </div>
+            )}
+            {awaitingCardPayment(order) && order.status !== 'CANCELLED' && (
+              <div style={{ margin: '0 1.25rem 0.75rem', fontSize: '0.78rem', color: '#b45309' }}>
+                Waiting for the customer&rsquo;s card payment — the order can be processed once it&rsquo;s paid.
+              </div>
+            )}
+
             {/* Status step buttons */}
             <StepButtons
               order={order}
@@ -264,40 +318,47 @@ export default function AdminOrders() {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 6, marginTop: '2rem' }}>
-          <PagBtn onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={safePage === 1}>
-            <FiChevronLeft size={15} />
-          </PagBtn>
-          {pageNums.map((n) => (
-            <PagBtn key={n} active={n === safePage} onClick={() => setPage(n)}>
-              {n}
-            </PagBtn>
-          ))}
-          <PagBtn onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={safePage === totalPages}>
-            <FiChevronRight size={15} />
-          </PagBtn>
-        </div>
-      )}
+      <div style={{ maxWidth: 960, margin: '1.5rem auto 0', padding: '0 1rem' }}>
+        <Pagination
+          page={safePage}
+          totalItems={orders.length}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          itemLabel="orders"
+          style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12 }}
+        />
+      </div>
 
       {pendingChange && (() => {
         const { order, status } = pendingChange;
         const goingBack = statusIndex(status) < statusIndex(order.status);
         const isFinal = status === 'DELIVERED';
+        const isCancel = status === 'CANCELLED';
+        const paidByCard = order.paymentMethod === 'CARD' && order.paymentStatus === 'COMPLETED';
         return (
           <ConfirmDialog
-            title="Change order status?"
+            title={isCancel ? 'Cancel this order?' : 'Change order status?'}
             message={
               <>
-                Order <strong>#GMC-{1000 + order.orderId}</strong> ({order.userName}) will move from{' '}
+                Order <strong>{formatOrderNo(order.orderId)}</strong> ({order.userName}) will move from{' '}
                 <strong>{stepLabel(order.status)}</strong> to <strong>{stepLabel(status)}</strong>.
                 The customer will be notified.
                 {goingBack && <div style={{ marginTop: 8, color: '#b45309' }}>This moves the order back to an earlier step.</div>}
                 {isFinal && <div style={{ marginTop: 8, color: '#b45309' }}>Delivered is final — the status can't be changed afterwards.</div>}
+                {isFinal && order.paymentMethod === 'CASH_ON_DELIVERY' && (
+                  <div style={{ marginTop: 8 }}>Only confirm once the courier has collected {formatLKR(order.totalAmount)} in cash — it will be marked as paid.</div>
+                )}
+                {isCancel && <div style={{ marginTop: 8 }}>The items will be returned to stock. This can&rsquo;t be undone.</div>}
+                {isCancel && paidByCard && (
+                  <div style={{ marginTop: 8, color: '#b91c1c' }}>
+                    This order was paid by card. Refund {formatLKR(order.totalAmount)} from your Stripe Dashboard (Payments → select the payment → Refund).
+                  </div>
+                )}
               </>
             }
-            confirmLabel={`Mark as ${stepLabel(status)}`}
-            tone={goingBack || isFinal ? 'warning' : 'primary'}
+            confirmLabel={isCancel ? 'Cancel order' : `Mark as ${stepLabel(status)}`}
+            cancelLabel={isCancel ? 'Keep order' : 'Cancel'}
+            tone={isCancel ? 'danger' : goingBack || isFinal ? 'warning' : 'primary'}
             loading={updatingId === order.orderId}
             onConfirm={handleStatusChange}
             onCancel={() => setPendingChange(null)}
@@ -305,46 +366,7 @@ export default function AdminOrders() {
         );
       })()}
 
-      {/* Footer */}
-      <footer style={{
-        marginTop: '4rem', borderTop: '1px solid #e5e7eb',
-        padding: '1.5rem 2rem',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        flexWrap: 'wrap', gap: '1rem',
-      }}>
-        <div>
-          <div style={{ fontWeight: 700, color: '#111827', fontSize: '0.9rem' }}>GMC Lanka Admin</div>
-          <div style={{ fontSize: '0.75rem', color: '#9ca3af', marginTop: 2 }}>
-            &copy; 2024 Industrial Modernism Corp. All rights reserved.
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: '1.5rem' }}>
-          {['Privacy Policy', 'Terms of Service', 'System Status', 'Technical Support'].map((t) => (
-            <a key={t} href="#" style={{ fontSize: '0.8rem', color: '#9ca3af', textDecoration: 'none' }}>{t}</a>
-          ))}
-        </div>
-      </footer>
     </div>
-  );
-}
-
-function PagBtn({ children, onClick, disabled, active }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      style={{
-        width: 36, height: 36, borderRadius: 8,
-        border: active ? 'none' : '1px solid #e5e7eb',
-        background: active ? '#0f766e' : '#fff',
-        color: active ? '#fff' : disabled ? '#d1d5db' : '#374151',
-        fontWeight: active ? 700 : 500, fontSize: '0.875rem',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-      }}
-    >
-      {children}
-    </button>
   );
 }
 

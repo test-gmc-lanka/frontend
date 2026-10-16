@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 const BG_IMAGE =
   'https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?w=1920&q=60&auto=format&fit=crop';
 
-export default function RegisterModal({ onClose, onSwitchToLogin }) {
+export default function RegisterModal({ onClose, onRegistered, onSwitchToLogin }) {
   const { login } = useAuth();
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' });
   const [loading, setLoading] = useState(false);
@@ -36,10 +36,10 @@ export default function RegisterModal({ onClose, onSwitchToLogin }) {
       const { data } = await apiRegister({ name: form.name, email: form.email, password: form.password });
       login(data);
       toast.success(`Account created! Welcome, ${data.name}!`);
-      onClose();
+      if (onRegistered) onRegistered(data); else onClose();
     } catch (err) {
       if (err.code === 'ERR_NETWORK' || err.message?.includes('Network')) {
-        setError('Cannot connect to server. Please make sure the backend is running on port 8080.');
+        setError('We can\u2019t reach GMC Lanka right now. Please check your connection and try again.');
       } else if (err.response?.status === 409) {
         setError('An account with this email already exists. Please login instead.');
       } else {
@@ -50,8 +50,23 @@ export default function RegisterModal({ onClose, onSwitchToLogin }) {
     }
   };
 
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
+
   return (
-    <div style={overlayStyle}>
+    <div style={overlayStyle} role="dialog" aria-modal="true" aria-label="Create an account"
+      onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close"
+        style={{ position: 'absolute', top: 16, right: 16, zIndex: 2, width: 36, height: 36, borderRadius: '50%', border: '1px solid #e5e7eb', background: '#fff', cursor: 'pointer', fontSize: '1.1rem', color: '#374151' }}
+      >
+        ✕
+      </button>
       {/* Background image with white wash */}
       <div
         style={{
@@ -81,10 +96,11 @@ export default function RegisterModal({ onClose, onSwitchToLogin }) {
         <form onSubmit={handleSubmit} autoComplete="off">
           {/* Full Name */}
           <div style={fieldGroupStyle}>
-            <label style={labelStyle}>FULL NAME</label>
+            <label htmlFor="reg-name" style={labelStyle}>FULL NAME</label>
             <div style={inputWrapStyle}>
               <FiUser size={15} style={iconStyle} />
               <input
+                id="reg-name"
                 type="text"
                 className="reg-input"
                 style={inputStyle}
@@ -98,10 +114,11 @@ export default function RegisterModal({ onClose, onSwitchToLogin }) {
 
           {/* Email */}
           <div style={fieldGroupStyle}>
-            <label style={labelStyle}>EMAIL ADDRESS</label>
+            <label htmlFor="reg-email" style={labelStyle}>EMAIL ADDRESS</label>
             <div style={inputWrapStyle}>
               <FiMail size={15} style={iconStyle} />
               <input
+                id="reg-email"
                 type="email"
                 className="reg-input"
                 style={inputStyle}
@@ -116,10 +133,11 @@ export default function RegisterModal({ onClose, onSwitchToLogin }) {
           {/* Password row — 2 columns */}
           <div style={passwordRowStyle}>
             <div style={{ flex: 1 }}>
-              <label style={labelStyle}>PASSWORD</label>
+              <label htmlFor="reg-password" style={labelStyle}>PASSWORD</label>
               <div style={inputWrapStyle}>
                 <FiLock size={15} style={iconStyle} />
                 <input
+                id="reg-password"
                   type="password"
                   className="reg-input"
                   style={inputStyle}
@@ -127,15 +145,16 @@ export default function RegisterModal({ onClose, onSwitchToLogin }) {
                   value={form.password}
                   onChange={set('password')}
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
             </div>
             <div style={{ flex: 1 }}>
-              <label style={labelStyle}>CONFIRM PASSWORD</label>
+              <label htmlFor="reg-confirm" style={labelStyle}>CONFIRM PASSWORD</label>
               <div style={inputWrapStyle}>
                 <FiShield size={15} style={iconStyle} />
                 <input
+                id="reg-confirm"
                   type="password"
                   className="reg-input"
                   style={inputStyle}
@@ -143,7 +162,7 @@ export default function RegisterModal({ onClose, onSwitchToLogin }) {
                   value={form.confirmPassword}
                   onChange={set('confirmPassword')}
                   required
-                  minLength={6}
+                  minLength={8}
                 />
               </div>
             </div>
@@ -163,12 +182,7 @@ export default function RegisterModal({ onClose, onSwitchToLogin }) {
 
       {/* Footer */}
       <div style={footerStyle}>
-        <span>© 2024 CNC Lanka. Engineering Precision via Architectural Integrity.</span>
-        <div style={{ display: 'flex', gap: '1.5rem' }}>
-          <span style={footerLinkStyle}>Privacy Policy</span>
-          <span style={footerLinkStyle}>Terms of Service</span>
-          <span style={footerLinkStyle}>Technical Docs</span>
-        </div>
+        <span>© {new Date().getFullYear()} GMC Lanka.</span>
       </div>
     </div>
   );
@@ -357,8 +371,3 @@ const footerStyle = {
   color: '#4b5563',
 };
 
-const footerLinkStyle = {
-  color: '#1e3a5c',
-  cursor: 'pointer',
-  fontWeight: 500,
-};

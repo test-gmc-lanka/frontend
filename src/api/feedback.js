@@ -9,3 +9,4 @@ export const submitCustomDesign = (formData) =>
     headers: { 'Content-Type': 'multipart/form-data' },
   });
 export const getMyDesigns = () => api.get('/custom-designs');
+export const updateFeedback = (id, data) => api.put(`/feedback/${id}`, data);

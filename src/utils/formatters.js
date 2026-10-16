@@ -43,3 +43,15 @@ export const getErrorMessage = (error) => {
     'Something went wrong. Please try again.'
   );
 };
+
+// One order-number format everywhere (matches emails and notifications: "Order #12")
+export const formatOrderNo = (orderId) => `#${orderId}`;
+
+// One set of order-status labels everywhere
+export const ORDER_STATUS_LABEL = {
+  PENDING: 'Pending',
+  PROCESSING: 'Processing',
+  SHIPPED: 'Shipped',
+  DELIVERED: 'Delivered',
+  CANCELLED: 'Cancelled',
+};

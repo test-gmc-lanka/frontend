@@ -4,6 +4,7 @@ import { FiShoppingCart, FiUser } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import { getCart } from '../../api/cart';
 import Avatar from '../common/Avatar';
+import NotificationBell from './NotificationBell';
 
 export default function Navbar({ onLoginClick, onRegisterClick }) {
   const { user, logout, isAdmin, isTechnician, cartVersion } = useAuth();
@@ -67,7 +68,7 @@ export default function Navbar({ onLoginClick, onRegisterClick }) {
         </Link>
 
         {/* Desktop nav links */}
-        <div className="flex items-center" style={{ gap: '2rem' }}>
+        <div className="flex items-center navbar-links" style={{ gap: '2rem' }}>
           {!isAdmin && !isTechnician && (
             <>
               {link('/', 'Products', true)}
@@ -110,6 +111,7 @@ export default function Navbar({ onLoginClick, onRegisterClick }) {
 
           {user ? (
             <>
+              <NotificationBell key={user.userId} />
               <div ref={dropdownRef} style={{ position: 'relative', display: 'flex' }}>
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}

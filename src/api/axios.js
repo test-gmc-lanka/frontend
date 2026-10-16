@@ -39,7 +39,7 @@ api.interceptors.response.use(
             original.headers.Authorization = `Bearer ${token}`;
             return api(original);
           })
-          .catch(Promise.reject);
+          .catch((err) => Promise.reject(err));
       }
       original._retry = true;
       isRefreshing = true;
@@ -54,6 +54,8 @@ api.interceptors.response.use(
         processQueue(err, null);
         localStorage.removeItem('accessToken');
         localStorage.removeItem('user');
+        // Tell AuthContext the session is gone so the navbar stops showing the old user
+        window.dispatchEvent(new Event('auth:logout'));
         // Only redirect away from protected pages, not public ones like '/'
         const currentPath = window.location.pathname;
         if (currentPath !== '/' && !currentPath.startsWith('/products')) {
