@@ -71,10 +71,18 @@ function PaymentFormInner({ orderId, amount, onPaid }) {
     <form onSubmit={handlePay}>
       <PaymentElement onReady={() => setReady(true)} options={{ layout: 'tabs' }} />
       {error && (
-        <div role="alert" style={{
-          marginTop: '1rem', background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c',
-          borderRadius: 8, padding: '0.65rem 0.875rem', fontSize: '0.85rem',
-        }}>
+        <div
+          role="alert"
+          style={{
+            marginTop: '1rem',
+            background: '#fef2f2',
+            border: '1px solid #fecaca',
+            color: '#b91c1c',
+            borderRadius: 8,
+            padding: '0.65rem 0.875rem',
+            fontSize: '0.85rem',
+          }}
+        >
           {error}
         </div>
       )}
@@ -82,9 +90,19 @@ function PaymentFormInner({ orderId, amount, onPaid }) {
         type="submit"
         disabled={!stripe || !ready || paying}
         style={{
-          width: '100%', marginTop: '1.25rem', padding: '0.875rem', border: 'none', borderRadius: 8,
-          background: '#0f3460', color: '#fff', fontWeight: 700, fontSize: '0.95rem',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          width: '100%',
+          marginTop: '1.25rem',
+          padding: '0.875rem',
+          border: 'none',
+          borderRadius: 8,
+          background: '#0f3460',
+          color: '#fff',
+          fontWeight: 700,
+          fontSize: '0.95rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 8,
           cursor: !stripe || !ready || paying ? 'not-allowed' : 'pointer',
           opacity: !stripe || !ready || paying ? 0.7 : 1,
         }}

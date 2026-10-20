@@ -54,12 +54,12 @@ export default function HomePage({ onLoginClick }) {
   }, []);
 
   /* Reset page when filter/sort changes */
-  useEffect(() => { setPage(1); }, [selectedCategory, sort]);
+  useEffect(() => {
+    setPage(1);
+  }, [selectedCategory, sort]);
 
   const filtered = useMemo(() => {
-    let list = products.filter(
-      (p) => !selectedCategory || p.category?.categoryId == selectedCategory,
-    );
+    let list = products.filter((p) => !selectedCategory || String(p.category?.categoryId) === String(selectedCategory));
     if (sort === 'price-asc') list = [...list].sort((a, b) => a.price - b.price);
     if (sort === 'price-desc') list = [...list].sort((a, b) => b.price - a.price);
     return list;
@@ -71,7 +71,10 @@ export default function HomePage({ onLoginClick }) {
   const handleAddToCart = async (e, productId) => {
     e.preventDefault(); // the button sits inside the product link
     e.stopPropagation();
-    if (!user) { onLoginClick(); return; }
+    if (!user) {
+      onLoginClick();
+      return;
+    }
     if (isAdmin || isTechnician) return;
     setAddingId(productId);
     try {
@@ -85,44 +88,86 @@ export default function HomePage({ onLoginClick }) {
     }
   };
 
-  if (loading) return <div style={{ background: '#fff', minHeight: '100vh' }}><LoadingSpinner /></div>;
+  if (loading)
+    return (
+      <div style={{ background: '#fff', minHeight: '100vh' }}>
+        <LoadingSpinner />
+      </div>
+    );
 
   return (
     <div style={{ background: '#fff', minHeight: '100vh', color: '#111827' }}>
-
       {/* ── Hero ────────────────────────────────────────────────────────── */}
       <div style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
         <div style={{ maxWidth: 1120, margin: '0 auto', padding: '3rem 1.5rem 3.5rem' }}>
           {loadError && (
-            <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', borderRadius: 6, padding: '0.75rem 1rem', fontSize: '0.875rem', marginBottom: '1.5rem' }}>
+            <div
+              style={{
+                background: '#fef2f2',
+                border: '1px solid #fecaca',
+                color: '#dc2626',
+                borderRadius: 6,
+                padding: '0.75rem 1rem',
+                fontSize: '0.875rem',
+                marginBottom: '1.5rem',
+              }}
+            >
               ⚠️ {loadError}
             </div>
           )}
-          <div style={{ fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.14em', color: '#0f766e', marginBottom: '0.75rem' }}>
+          <div
+            style={{
+              fontSize: '0.7rem',
+              fontWeight: 800,
+              letterSpacing: '0.14em',
+              color: '#0f766e',
+              marginBottom: '0.75rem',
+            }}
+          >
             PRECISION ENGINEERING
           </div>
-          <h1 style={{ fontSize: '2.75rem', fontWeight: 800, color: '#111827', marginBottom: '0.875rem', lineHeight: 1.1 }}>
+          <h1
+            style={{
+              fontSize: '2.75rem',
+              fontWeight: 800,
+              color: '#111827',
+              marginBottom: '0.875rem',
+              lineHeight: 1.1,
+            }}
+          >
             Product Catalog
           </h1>
           <p style={{ fontSize: '1rem', color: '#6b7280', maxWidth: 560, lineHeight: 1.7 }}>
-            Explore our collection of precision-engineered industrial solutions and handcrafted artisanal
-            wood products, where modern technology meets traditional craftsmanship.
+            Explore our collection of precision-engineered industrial solutions and handcrafted artisanal wood products,
+            where modern technology meets traditional craftsmanship.
           </p>
         </div>
       </div>
 
       {/* ── Filters + Grid ──────────────────────────────────────────────── */}
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '2rem 1.5rem' }}>
-
         {/* Filter bar */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.75rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '1.75rem',
+            flexWrap: 'wrap',
+            gap: '0.75rem',
+          }}
+        >
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <FilterChip active={!selectedCategory} onClick={() => setSelectedCategory('')}>ALL PRODUCTS</FilterChip>
+            <FilterChip active={!selectedCategory} onClick={() => setSelectedCategory('')}>
+              ALL PRODUCTS
+            </FilterChip>
             {categories.map((c) => (
               <FilterChip
                 key={c.categoryId}
-                active={selectedCategory == c.categoryId}
-                onClick={() => setSelectedCategory(selectedCategory == c.categoryId ? '' : c.categoryId)}
+                active={String(selectedCategory) === String(c.categoryId)}
+                onClick={() =>
+                  setSelectedCategory(String(selectedCategory) === String(c.categoryId) ? '' : c.categoryId)
+                }
               >
                 {c.name.toUpperCase()}
               </FilterChip>
@@ -133,7 +178,16 @@ export default function HomePage({ onLoginClick }) {
             <select
               value={sort}
               onChange={(e) => setSort(e.target.value)}
-              style={{ border: '1px solid #d1d5db', borderRadius: 4, padding: '0.35rem 0.75rem', fontSize: '0.875rem', fontWeight: 600, background: '#fff', color: '#111827', cursor: 'pointer' }}
+              style={{
+                border: '1px solid #d1d5db',
+                borderRadius: 4,
+                padding: '0.35rem 0.75rem',
+                fontSize: '0.875rem',
+                fontWeight: 600,
+                background: '#fff',
+                color: '#111827',
+                cursor: 'pointer',
+              }}
             >
               <option value="featured">Featured</option>
               <option value="price-asc">Price Low → High</option>
@@ -158,34 +212,92 @@ export default function HomePage({ onLoginClick }) {
                 <Link
                   key={p.productId}
                   to={`/products/${p.productId}`}
-                  style={{ display: 'block', color: 'inherit', textDecoration: 'none', border: '1px solid #e5e7eb', borderRadius: 4, overflow: 'hidden', background: '#fff', transition: 'box-shadow 0.2s' }}
-                  onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.boxShadow = 'none'; }}
+                  style={{
+                    display: 'block',
+                    color: 'inherit',
+                    textDecoration: 'none',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: 4,
+                    overflow: 'hidden',
+                    background: '#fff',
+                    transition: 'box-shadow 0.2s',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
                 >
                   {/* Image */}
                   <div style={{ position: 'relative' }}>
                     {p.imageUrl ? (
-                      <img src={p.imageUrl} alt={p.name} style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }} />
+                      <img
+                        src={p.imageUrl}
+                        alt={p.name}
+                        style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }}
+                      />
                     ) : (
-                      <div style={{ height: 200, background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '3rem' }}>🪵</div>
+                      <div
+                        style={{
+                          height: 200,
+                          background: '#f3f4f6',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '3rem',
+                        }}
+                      >
+                        🪵
+                      </div>
                     )}
                     {badge && (
-                      <div style={{
-                        position: 'absolute', top: '0.5rem', left: '0.5rem',
-                        background: badge.bg, color: '#fff',
-                        fontSize: '0.6rem', fontWeight: 800, letterSpacing: '0.08em',
-                        padding: '0.2rem 0.55rem', borderRadius: 2,
-                      }}>{badge.text}</div>
+                      <div
+                        style={{
+                          position: 'absolute',
+                          top: '0.5rem',
+                          left: '0.5rem',
+                          background: badge.bg,
+                          color: '#fff',
+                          fontSize: '0.6rem',
+                          fontWeight: 800,
+                          letterSpacing: '0.08em',
+                          padding: '0.2rem 0.55rem',
+                          borderRadius: 2,
+                        }}
+                      >
+                        {badge.text}
+                      </div>
                     )}
                   </div>
 
                   {/* Body */}
                   <div style={{ padding: '0.875rem' }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#111827', marginBottom: '0.35rem', lineHeight: 1.3 }}>{p.name}</div>
-                    <div style={{
-                      fontSize: '0.8rem', color: '#6b7280', lineHeight: 1.55, marginBottom: '0.875rem',
-                      display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
-                    }}>{p.description}</div>
+                    <div
+                      style={{
+                        fontWeight: 700,
+                        fontSize: '0.95rem',
+                        color: '#111827',
+                        marginBottom: '0.35rem',
+                        lineHeight: 1.3,
+                      }}
+                    >
+                      {p.name}
+                    </div>
+                    <div
+                      style={{
+                        fontSize: '0.8rem',
+                        color: '#6b7280',
+                        lineHeight: 1.55,
+                        marginBottom: '0.875rem',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {p.description}
+                    </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <div style={{ fontSize: '1rem', fontWeight: 700, color: '#111827' }}>
                         {isQuote ? 'Price on request' : formatLKR(p.price)}
@@ -198,9 +310,16 @@ export default function HomePage({ onLoginClick }) {
                           aria-label={`Add ${p.name} to cart`}
                           style={{
                             background: addingId === p.productId ? '#2d5a8c' : '#1e3a5c',
-                            color: '#fff', border: 'none', borderRadius: 4,
-                            width: 36, height: 36, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            cursor: addingId === p.productId ? 'not-allowed' : 'pointer', flexShrink: 0,
+                            color: '#fff',
+                            border: 'none',
+                            borderRadius: 4,
+                            width: 36,
+                            height: 36,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: addingId === p.productId ? 'not-allowed' : 'pointer',
+                            flexShrink: 0,
                           }}
                         >
                           <FiShoppingCart size={15} />
@@ -220,7 +339,10 @@ export default function HomePage({ onLoginClick }) {
             page={safePage}
             totalItems={filtered.length}
             pageSize={PAGE_SIZE}
-            onPageChange={(n) => { setPage(n); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            onPageChange={(n) => {
+              setPage(n);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             itemLabel="products"
             style={{ marginTop: '2rem', padding: '0.9rem 0' }}
           />
@@ -228,17 +350,39 @@ export default function HomePage({ onLoginClick }) {
       </div>
 
       {/* ── Custom CNC Solutions CTA ─────────────────────────────────────── */}
-      <div style={{ background: '#f9fafb', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb', margin: '1rem 0' }}>
-        <div className="layout-split" style={{ maxWidth: 1120, margin: '0 auto', padding: '3rem 1.5rem', alignItems: 'center' }}>
+      <div
+        style={{
+          background: '#f9fafb',
+          borderTop: '1px solid #e5e7eb',
+          borderBottom: '1px solid #e5e7eb',
+          margin: '1rem 0',
+        }}
+      >
+        <div
+          className="layout-split"
+          style={{ maxWidth: 1120, margin: '0 auto', padding: '3rem 1.5rem', alignItems: 'center' }}
+        >
           <div>
-            <h2 style={{ fontSize: '1.625rem', fontWeight: 800, color: '#111827', marginBottom: '1rem' }}>Custom CNC Solutions</h2>
+            <h2 style={{ fontSize: '1.625rem', fontWeight: 800, color: '#111827', marginBottom: '1rem' }}>
+              Custom CNC Solutions
+            </h2>
             <p style={{ color: '#6b7280', lineHeight: 1.75, fontSize: '0.9rem', marginBottom: '1.5rem' }}>
               Need something specific? We offer bespoke manufacturing services for both industrial parts and unique
               furniture pieces, made on our own CNC machines.
             </p>
             <button
-              onClick={() => user ? navigate('/appointments') : onLoginClick()}
-              style={{ background: '#1e3a5c', color: '#fff', border: 'none', borderRadius: 6, padding: '0.75rem 1.5rem', fontSize: '0.875rem', fontWeight: 700, letterSpacing: '0.06em', cursor: 'pointer' }}
+              onClick={() => (user ? navigate('/appointments') : onLoginClick())}
+              style={{
+                background: '#1e3a5c',
+                color: '#fff',
+                border: 'none',
+                borderRadius: 6,
+                padding: '0.75rem 1.5rem',
+                fontSize: '0.875rem',
+                fontWeight: 700,
+                letterSpacing: '0.06em',
+                cursor: 'pointer',
+              }}
             >
               REQUEST A QUOTE
             </button>
@@ -252,7 +396,6 @@ export default function HomePage({ onLoginClick }) {
           </div>
         </div>
       </div>
-
     </div>
   );
 }
@@ -279,4 +422,3 @@ function FilterChip({ active, onClick, children }) {
     </button>
   );
 }
-

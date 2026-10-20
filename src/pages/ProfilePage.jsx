@@ -104,13 +104,20 @@ export default function ProfilePage() {
     <div className="page">
       <div className="container" style={{ maxWidth: 640 }}>
         <div className="page-header">
-          <h1 className="page-title flex items-center gap-3"><FiUser /> Profile Settings</h1>
+          <h1 className="page-title flex items-center gap-3">
+            <FiUser /> Profile Settings
+          </h1>
         </div>
 
         {/* Avatar */}
         <div className="card" style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', marginBottom: '1.5rem' }}>
           <div style={{ position: 'relative', flexShrink: 0 }}>
-            <Avatar src={profile?.profileImageUrl} name={profile?.name} size={80} style={{ opacity: uploadingPhoto ? 0.5 : 1 }} />
+            <Avatar
+              src={profile?.profileImageUrl}
+              name={profile?.name}
+              size={80}
+              style={{ opacity: uploadingPhoto ? 0.5 : 1 }}
+            />
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
@@ -118,10 +125,18 @@ export default function ProfilePage() {
               title={profile?.profileImageUrl ? 'Change photo' : 'Upload photo'}
               aria-label={profile?.profileImageUrl ? 'Change profile photo' : 'Upload profile photo'}
               style={{
-                position: 'absolute', right: -2, bottom: -2, width: 30, height: 30,
-                borderRadius: '50%', border: '2px solid var(--bg-secondary)',
-                background: 'var(--color-primary)', color: '#fff',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                position: 'absolute',
+                right: -2,
+                bottom: -2,
+                width: 30,
+                height: 30,
+                borderRadius: '50%',
+                border: '2px solid var(--bg-secondary)',
+                background: 'var(--color-primary)',
+                color: '#fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
                 cursor: uploadingPhoto ? 'wait' : 'pointer',
               }}
             >
@@ -138,17 +153,32 @@ export default function ProfilePage() {
           <div>
             <div style={{ fontWeight: 700, fontSize: '1.125rem' }}>{profile?.name}</div>
             <div style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>{profile?.email}</div>
-            <span className={`badge badge-${profile?.role?.toLowerCase()}`} style={{ marginTop: '0.25rem', background: 'rgba(0,200,215,0.15)', color: 'var(--color-primary)' }}>
+            <span
+              className={`badge badge-${profile?.role?.toLowerCase()}`}
+              style={{ marginTop: '0.25rem', background: 'rgba(0,200,215,0.15)', color: 'var(--color-primary)' }}
+            >
               {profile?.role}
             </span>
             <div style={{ fontSize: '0.78rem', marginTop: '0.4rem', color: 'var(--text-muted)' }}>
-              {uploadingPhoto ? 'Uploading photo...' : (
+              {uploadingPhoto ? (
+                'Uploading photo...'
+              ) : (
                 <>
                   <button type="button" onClick={() => fileInputRef.current?.click()} style={linkButtonStyle}>
                     {profile?.profileImageUrl ? 'Change photo' : 'Upload photo'}
                   </button>
                   {profile?.profileImageUrl && (
-                    <> · <button type="button" onClick={() => setConfirmRemovePhoto(true)} style={{ ...linkButtonStyle, color: 'var(--danger)' }}>Remove photo</button></>
+                    <>
+                      {' '}
+                      ·{' '}
+                      <button
+                        type="button"
+                        onClick={() => setConfirmRemovePhoto(true)}
+                        style={{ ...linkButtonStyle, color: 'var(--danger)' }}
+                      >
+                        Remove photo
+                      </button>
+                    </>
                   )}
                 </>
               )}
@@ -173,7 +203,10 @@ export default function ProfilePage() {
                 <label className="form-label">Full Name</label>
                 <div style={{ position: 'relative' }}>
                   <FiUser style={iconStyle} />
-                  <input type="text" className="form-input" style={{ paddingLeft: '2.5rem' }}
+                  <input
+                    type="text"
+                    className="form-input"
+                    style={{ paddingLeft: '2.5rem' }}
                     value={profileForm.name}
                     onChange={(e) => setProfileForm({ ...profileForm, name: e.target.value })}
                     placeholder="Your name"
@@ -189,7 +222,10 @@ export default function ProfilePage() {
                 <label className="form-label">Phone Number</label>
                 <div style={{ position: 'relative' }}>
                   <FiPhone style={iconStyle} />
-                  <input type="tel" className="form-input" style={{ paddingLeft: '2.5rem' }}
+                  <input
+                    type="tel"
+                    className="form-input"
+                    style={{ paddingLeft: '2.5rem' }}
                     value={profileForm.phone}
                     onChange={(e) => setProfileForm({ ...profileForm, phone: e.target.value })}
                     placeholder="Your phone number"
@@ -200,7 +236,9 @@ export default function ProfilePage() {
                 <label className="form-label">Address</label>
                 <div style={{ position: 'relative' }}>
                   <FiMapPin style={{ ...iconStyle, top: '0.875rem', transform: 'none' }} />
-                  <textarea className="form-input" style={{ paddingLeft: '2.5rem', resize: 'vertical' }}
+                  <textarea
+                    className="form-input"
+                    style={{ paddingLeft: '2.5rem', resize: 'vertical' }}
                     rows={3}
                     value={profileForm.address}
                     onChange={(e) => setProfileForm({ ...profileForm, address: e.target.value })}
@@ -222,7 +260,10 @@ export default function ProfilePage() {
                 <label className="form-label">Current Password</label>
                 <div style={{ position: 'relative' }}>
                   <FiLock style={iconStyle} />
-                  <input type="password" className="form-input" style={{ paddingLeft: '2.5rem' }}
+                  <input
+                    type="password"
+                    className="form-input"
+                    style={{ paddingLeft: '2.5rem' }}
                     value={pwdForm.currentPassword}
                     onChange={(e) => setPwdForm({ ...pwdForm, currentPassword: e.target.value })}
                     placeholder="Enter current password"
@@ -234,7 +275,10 @@ export default function ProfilePage() {
                 <label className="form-label">New Password</label>
                 <div style={{ position: 'relative' }}>
                   <FiLock style={iconStyle} />
-                  <input type="password" className="form-input" style={{ paddingLeft: '2.5rem' }}
+                  <input
+                    type="password"
+                    className="form-input"
+                    style={{ paddingLeft: '2.5rem' }}
                     value={pwdForm.newPassword}
                     onChange={(e) => setPwdForm({ ...pwdForm, newPassword: e.target.value })}
                     placeholder="Min. 8 characters"
@@ -266,11 +310,19 @@ export default function ProfilePage() {
 }
 
 const linkButtonStyle = {
-  background: 'none', border: 'none', padding: 0, cursor: 'pointer',
-  color: 'var(--color-primary)', fontSize: 'inherit', fontWeight: 600,
+  background: 'none',
+  border: 'none',
+  padding: 0,
+  cursor: 'pointer',
+  color: 'var(--color-primary)',
+  fontSize: 'inherit',
+  fontWeight: 600,
 };
 
 const iconStyle = {
-  position: 'absolute', left: '0.875rem', top: '50%',
-  transform: 'translateY(-50%)', color: 'var(--text-muted)',
+  position: 'absolute',
+  left: '0.875rem',
+  top: '50%',
+  transform: 'translateY(-50%)',
+  color: 'var(--text-muted)',
 };

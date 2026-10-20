@@ -13,5 +13,4 @@ export const confirmOrderPayment = (id) => api.post(`/orders/${id}/payment/confi
 export const getMyOrders = () => api.get('/orders');
 export const getOrder = (id) => api.get(`/orders/${id}`);
 export const adminGetOrders = (params) => api.get('/admin/orders', { params });
-export const adminUpdateOrderStatus = (id, status) =>
-  api.put(`/admin/orders/${id}/status`, { status });
+export const adminUpdateOrderStatus = (id, status) => api.put(`/admin/orders/${id}/status`, { status });

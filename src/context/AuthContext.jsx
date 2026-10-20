@@ -20,26 +20,34 @@ export function AuthProvider({ children }) {
   const login = (data) => {
     localStorage.setItem('accessToken', data.accessToken);
     saveUser({
-      userId: data.userId, name: data.name, email: data.email, role: data.role,
+      userId: data.userId,
+      name: data.name,
+      email: data.email,
+      role: data.role,
       profileImageUrl: data.profileImageUrl || null,
     });
   };
 
   // Merge profile changes (name, photo) so the navbar and sidebar update immediately
-  const updateUser = (patch) => setUser((prev) => {
-    if (!prev) return prev;
-    const next = { ...prev, ...patch };
-    localStorage.setItem('user', JSON.stringify(next));
-    return next;
-  });
+  const updateUser = (patch) =>
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch };
+      localStorage.setItem('user', JSON.stringify(next));
+      return next;
+    });
 
   // Sessions saved before profile photos existed lack profileImageUrl/email; sync once on load
   const userId = user?.userId;
   useEffect(() => {
     if (!userId) return;
     getProfile()
-      .then(({ data }) => updateUser({ name: data.name, email: data.email, profileImageUrl: data.profileImageUrl || null }))
-      .catch(() => { /* the axios interceptor handles expired sessions */ });
+      .then(({ data }) =>
+        updateUser({ name: data.name, email: data.email, profileImageUrl: data.profileImageUrl || null }),
+      )
+      .catch(() => {
+        /* the axios interceptor handles expired sessions */
+      });
   }, [userId]);
 
   // Session ended elsewhere: refresh token expired (axios interceptor) or logout in another tab
@@ -58,7 +66,11 @@ export function AuthProvider({ children }) {
   }, []);
 
   const logout = async () => {
-    try { await apiLogout(); } catch { /* ignore */ }
+    try {
+      await apiLogout();
+    } catch {
+      /* ignore */
+    }
     localStorage.removeItem('accessToken');
     localStorage.removeItem('user');
     setUser(null);
@@ -69,7 +81,9 @@ export function AuthProvider({ children }) {
   const isCustomer = user?.role === 'CUSTOMER';
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, updateUser, isAdmin, isTechnician, isCustomer, cartVersion, refreshCart }}>
+    <AuthContext.Provider
+      value={{ user, login, logout, updateUser, isAdmin, isTechnician, isCustomer, cartVersion, refreshCart }}
+    >
       {children}
     </AuthContext.Provider>
   );

@@ -26,7 +26,7 @@ export default function AdminDashboard() {
     { icon: <FiShoppingBag />, label: 'Total Orders', value: stats?.totalOrders ?? 0, cls: 'stat-icon-teal' },
     { icon: <FiDollarSign />, label: 'Total Revenue', value: formatLKR(stats?.totalRevenue), cls: 'stat-icon-green' },
     { icon: <FiClock />, label: 'Pending Orders', value: stats?.pendingOrders ?? 0, cls: 'stat-icon-orange' },
-    { icon: <FiCalendar />, label: "Appointments Today", value: stats?.appointmentsToday ?? 0, cls: 'stat-icon-blue' },
+    { icon: <FiCalendar />, label: 'Appointments Today', value: stats?.appointmentsToday ?? 0, cls: 'stat-icon-blue' },
     { icon: <FiUsers />, label: 'Total Users', value: stats?.totalUsers ?? 0, cls: 'stat-icon-teal' },
     { icon: <FiPackage />, label: 'Total Products', value: stats?.totalProducts ?? 0, cls: 'stat-icon-blue' },
   ];
@@ -35,9 +35,7 @@ export default function AdminDashboard() {
     <div>
       <div style={{ marginBottom: '2rem' }}>
         <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Dashboard</h1>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>
-          Overview of GMC Lanka Creations
-        </p>
+        <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Overview of GMC Lanka Creations</p>
       </div>
 
       {/* Stat cards */}
@@ -76,25 +74,39 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {[...stats.lowStockProducts].sort((a, b) => a.stockQuantity - b.stockQuantity).slice(0, LOW_STOCK_LIMIT).map((p) => (
-                  <tr key={p.productId}>
-                    <td style={{ fontWeight: 500 }}>{p.name}</td>
-                    <td>{p.category?.name || '-'}</td>
-                    <td>{p.material || '-'}</td>
-                    <td>
-                      <span style={{ color: p.stockQuantity === 0 ? 'var(--danger)' : 'var(--warning)', fontWeight: 600 }}>
-                        {p.stockQuantity}
-                      </span>
-                    </td>
-                    <td>{formatLKR(p.price)}</td>
-                  </tr>
-                ))}
+                {[...stats.lowStockProducts]
+                  .sort((a, b) => a.stockQuantity - b.stockQuantity)
+                  .slice(0, LOW_STOCK_LIMIT)
+                  .map((p) => (
+                    <tr key={p.productId}>
+                      <td style={{ fontWeight: 500 }}>{p.name}</td>
+                      <td>{p.category?.name || '-'}</td>
+                      <td>{p.material || '-'}</td>
+                      <td>
+                        <span
+                          style={{ color: p.stockQuantity === 0 ? 'var(--danger)' : 'var(--warning)', fontWeight: 600 }}
+                        >
+                          {p.stockQuantity}
+                        </span>
+                      </td>
+                      <td>{formatLKR(p.price)}</td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
             {stats.lowStockProducts.length > LOW_STOCK_LIMIT && (
-              <div style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: 'var(--text-secondary)', borderTop: '1px solid var(--border)' }}>
+              <div
+                style={{
+                  padding: '0.75rem 1rem',
+                  fontSize: '0.85rem',
+                  color: 'var(--text-secondary)',
+                  borderTop: '1px solid var(--border)',
+                }}
+              >
                 Showing the {LOW_STOCK_LIMIT} lowest of {stats.lowStockProducts.length}.{' '}
-                <Link to="/admin/products" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>View all products</Link>
+                <Link to="/admin/products" style={{ color: 'var(--color-primary)', fontWeight: 600 }}>
+                  View all products
+                </Link>
               </div>
             )}
           </div>

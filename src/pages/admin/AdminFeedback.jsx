@@ -2,7 +2,10 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiStar, FiEye, FiEyeOff } from 'react-icons/fi';
 import {
-  adminGetFeedback, adminGetComplaints, adminUpdateComplaintStatus, adminSetFeedbackVisibility,
+  adminGetFeedback,
+  adminGetComplaints,
+  adminUpdateComplaintStatus,
+  adminSetFeedbackVisibility,
 } from '../../api/admin';
 import { formatDateTime, getErrorMessage } from '../../utils/formatters';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
@@ -25,7 +28,14 @@ function StarRating({ rating }) {
   return (
     <div className="flex gap-1">
       {[1, 2, 3, 4, 5].map((s) => (
-        <FiStar key={s} size={14} style={{ color: s <= rating ? 'var(--warning)' : 'var(--border)', fill: s <= rating ? 'var(--warning)' : 'transparent' }} />
+        <FiStar
+          key={s}
+          size={14}
+          style={{
+            color: s <= rating ? 'var(--warning)' : 'var(--border)',
+            fill: s <= rating ? 'var(--warning)' : 'transparent',
+          }}
+        />
       ))}
     </div>
   );
@@ -46,7 +56,10 @@ export default function AdminFeedback() {
 
   const toggleHidden = async (f) => {
     const hide = !f.hidden;
-    if (hide && hideTarget?.feedbackId !== f.feedbackId) { setHideTarget(f); return; }
+    if (hide && hideTarget?.feedbackId !== f.feedbackId) {
+      setHideTarget(f);
+      return;
+    }
     setHideTarget(null);
     setTogglingId(f.feedbackId);
     try {
@@ -62,7 +75,10 @@ export default function AdminFeedback() {
 
   useEffect(() => {
     Promise.all([adminGetFeedback(), adminGetComplaints()])
-      .then(([f, c]) => { setFeedback(f.data); setComplaints(c.data); })
+      .then(([f, c]) => {
+        setFeedback(f.data);
+        setComplaints(c.data);
+      })
       .catch(() => toast.error('Failed to load data'))
       .finally(() => setLoading(false));
   }, []);
@@ -73,7 +89,11 @@ export default function AdminFeedback() {
     try {
       const { data } = await adminUpdateComplaintStatus(id, status);
       setComplaints((prev) => prev.map((c) => (c.complaintId === id ? data : c)));
-      toast.success(status === 'RESOLVED' ? 'Complaint resolved — customer notified' : 'Marked as being handled — customer notified');
+      toast.success(
+        status === 'RESOLVED'
+          ? 'Complaint resolved — customer notified'
+          : 'Marked as being handled — customer notified',
+      );
     } catch (err) {
       toast.error(getErrorMessage(err));
     } finally {
@@ -112,16 +132,26 @@ export default function AdminFeedback() {
         <>
           <div className="flex items-center gap-3" style={{ flexWrap: 'wrap', marginBottom: '1rem' }}>
             <div style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', marginRight: '0.5rem' }}>
-              {averageRating
-                ? <>Average <strong style={{ color: 'var(--text-primary)' }}>{averageRating} ★</strong> from {visibleReviews.length} visible review{visibleReviews.length !== 1 ? 's' : ''}</>
-                : 'No visible reviews yet'}
-              {lowCount > 0 && <span style={{ color: 'var(--danger)', fontWeight: 600 }}> · {lowCount} need attention</span>}
+              {averageRating ? (
+                <>
+                  Average <strong style={{ color: 'var(--text-primary)' }}>{averageRating} ★</strong> from{' '}
+                  {visibleReviews.length} visible review{visibleReviews.length !== 1 ? 's' : ''}
+                </>
+              ) : (
+                'No visible reviews yet'
+              )}
+              {lowCount > 0 && (
+                <span style={{ color: 'var(--danger)', fontWeight: 600 }}> · {lowCount} need attention</span>
+              )}
             </div>
             {RATING_FILTERS.map((r) => (
               <button
                 key={r.key}
                 className={`filter-chip ${ratingFilter === r.key ? 'active' : ''}`}
-                onClick={() => { setRatingFilter(r.key); setFeedbackPage(1); }}
+                onClick={() => {
+                  setRatingFilter(r.key);
+                  setFeedbackPage(1);
+                }}
               >
                 {r.label}
               </button>
@@ -129,19 +159,49 @@ export default function AdminFeedback() {
           </div>
           <div className="table-wrap">
             <table>
-              <thead><tr><th>Product</th><th>Customer</th><th>Rating</th><th>Review</th><th>Date</th><th>Visibility</th></tr></thead>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Customer</th>
+                  <th>Rating</th>
+                  <th>Review</th>
+                  <th>Date</th>
+                  <th>Visibility</th>
+                </tr>
+              </thead>
               <tbody>
                 {sortedFeedback.slice((fbPage - 1) * PAGE_SIZE, fbPage * PAGE_SIZE).map((f) => (
                   <tr key={f.feedbackId} style={{ opacity: f.hidden ? 0.6 : 1 }}>
                     <td>
                       <div className="flex items-center gap-2">
-                        {f.productImageUrl
-                          ? <img src={f.productImageUrl} alt="" style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
-                          : <div style={{ width: 40, height: 40, borderRadius: 6, background: 'var(--bg-primary)', flexShrink: 0 }} />}
+                        {f.productImageUrl ? (
+                          <img
+                            src={f.productImageUrl}
+                            alt=""
+                            style={{ width: 40, height: 40, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }}
+                          />
+                        ) : (
+                          <div
+                            style={{
+                              width: 40,
+                              height: 40,
+                              borderRadius: 6,
+                              background: 'var(--bg-primary)',
+                              flexShrink: 0,
+                            }}
+                          />
+                        )}
                         <div style={{ minWidth: 0 }}>
-                          {f.productId
-                            ? <Link to={`/products/${f.productId}`} style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{f.productName}</Link>
-                            : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                          {f.productId ? (
+                            <Link
+                              to={`/products/${f.productId}`}
+                              style={{ fontWeight: 600, color: 'var(--text-primary)' }}
+                            >
+                              {f.productName}
+                            </Link>
+                          ) : (
+                            <span style={{ color: 'var(--text-muted)' }}>—</span>
+                          )}
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Order #{f.orderId}</div>
                         </div>
                       </div>
@@ -149,11 +209,28 @@ export default function AdminFeedback() {
                     <td>
                       <div style={{ fontWeight: 500 }}>{f.userName}</div>
                       {f.userEmail && (
-                        <a href={`mailto:${f.userEmail}`} style={{ fontSize: '0.75rem', color: 'var(--color-primary)' }}>{f.userEmail}</a>
+                        <a
+                          href={`mailto:${f.userEmail}`}
+                          style={{ fontSize: '0.75rem', color: 'var(--color-primary)' }}
+                        >
+                          {f.userEmail}
+                        </a>
                       )}
                     </td>
-                    <td><StarRating rating={f.rating} /></td>
-                    <td style={{ maxWidth: 320, color: 'var(--text-secondary)', fontSize: '0.875rem', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{f.comment}</td>
+                    <td>
+                      <StarRating rating={f.rating} />
+                    </td>
+                    <td
+                      style={{
+                        maxWidth: 320,
+                        color: 'var(--text-secondary)',
+                        fontSize: '0.875rem',
+                        whiteSpace: 'pre-wrap',
+                        overflowWrap: 'anywhere',
+                      }}
+                    >
+                      {f.comment}
+                    </td>
                     <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                       {formatDateTime(f.createdAt)}
                       {f.updatedAt && <div>Edited {formatDateTime(f.updatedAt)}</div>}
@@ -165,9 +242,19 @@ export default function AdminFeedback() {
                         onClick={() => toggleHidden(f)}
                         title={f.hidden ? 'Show on the product page again' : 'Hide from the product page'}
                       >
-                        {f.hidden ? <><FiEye size={13} /> Show</> : <><FiEyeOff size={13} /> Hide</>}
+                        {f.hidden ? (
+                          <>
+                            <FiEye size={13} /> Show
+                          </>
+                        ) : (
+                          <>
+                            <FiEyeOff size={13} /> Hide
+                          </>
+                        )}
                       </button>
-                      {f.hidden && <div style={{ fontSize: '0.72rem', color: 'var(--warning)', marginTop: 4 }}>Hidden</div>}
+                      {f.hidden && (
+                        <div style={{ fontSize: '0.72rem', color: 'var(--warning)', marginTop: 4 }}>Hidden</div>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -178,8 +265,14 @@ export default function AdminFeedback() {
                 {feedback.length === 0 ? 'No reviews yet' : 'No reviews match this filter'}
               </div>
             )}
-            <Pagination page={fbPage} totalItems={sortedFeedback.length} pageSize={PAGE_SIZE}
-              onPageChange={setFeedbackPage} itemLabel="reviews" style={{ borderTop: '1px solid var(--border)' }} />
+            <Pagination
+              page={fbPage}
+              totalItems={sortedFeedback.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setFeedbackPage}
+              itemLabel="reviews"
+              style={{ borderTop: '1px solid var(--border)' }}
+            />
           </div>
         </>
       )}
@@ -187,17 +280,36 @@ export default function AdminFeedback() {
       {tab === 'complaints' && (
         <div className="table-wrap">
           <table>
-            <thead><tr><th>Customer</th><th>About</th><th>Description</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+            <thead>
+              <tr>
+                <th>Customer</th>
+                <th>About</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
             <tbody>
               {sortedComplaints.slice((cPage - 1) * PAGE_SIZE, cPage * PAGE_SIZE).map((c) => (
                 <tr key={c.complaintId}>
                   <td>{c.userName}</td>
                   <td style={{ fontSize: '0.85rem' }}>
                     {c.productName || (c.orderId ? 'Order' : 'General')}
-                    {c.orderId && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Order #{c.orderId}</div>}
+                    {c.orderId && (
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Order #{c.orderId}</div>
+                    )}
                   </td>
-                  <td style={{ maxWidth: 300, fontSize: '0.875rem', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{c.description}</td>
-                  <td><span className={`badge ${c.status === 'RESOLVED' ? 'badge-delivered' : c.status === 'IN_PROGRESS' ? 'badge-processing' : 'badge-pending'}`}>{(c.status || 'OPEN').replace('_', ' ')}</span></td>
+                  <td style={{ maxWidth: 300, fontSize: '0.875rem', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>
+                    {c.description}
+                  </td>
+                  <td>
+                    <span
+                      className={`badge ${c.status === 'RESOLVED' ? 'badge-delivered' : c.status === 'IN_PROGRESS' ? 'badge-processing' : 'badge-pending'}`}
+                    >
+                      {(c.status || 'OPEN').replace('_', ' ')}
+                    </span>
+                  </td>
                   <td style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{formatDateTime(c.date)}</td>
                   <td>
                     {c.status === 'OPEN' && (
@@ -224,15 +336,28 @@ export default function AdminFeedback() {
               ))}
             </tbody>
           </table>
-          {complaints.length === 0 && <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No complaints yet</div>}
-          <Pagination page={cPage} totalItems={sortedComplaints.length} pageSize={PAGE_SIZE}
-            onPageChange={setComplaintPage} itemLabel="complaints" style={{ borderTop: '1px solid var(--border)' }} />
+          {complaints.length === 0 && (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No complaints yet</div>
+          )}
+          <Pagination
+            page={cPage}
+            totalItems={sortedComplaints.length}
+            pageSize={PAGE_SIZE}
+            onPageChange={setComplaintPage}
+            itemLabel="complaints"
+            style={{ borderTop: '1px solid var(--border)' }}
+          />
         </div>
       )}
       {hideTarget && (
         <ConfirmDialog
           title="Hide this review?"
-          message={<>{hideTarget.userName}&rsquo;s review of <strong>{hideTarget.productName}</strong> will be removed from the product page and its rating. The customer will see that it was hidden. You can show it again later.</>}
+          message={
+            <>
+              {hideTarget.userName}&rsquo;s review of <strong>{hideTarget.productName}</strong> will be removed from the
+              product page and its rating. The customer will see that it was hidden. You can show it again later.
+            </>
+          }
           confirmLabel="Hide review"
           tone="warning"
           loading={togglingId === hideTarget.feedbackId}

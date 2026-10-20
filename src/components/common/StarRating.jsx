@@ -7,10 +7,18 @@ const LABELS = ['', 'Poor', 'Fair', 'Good', 'Very good', 'Excellent'];
 export function Stars({ value, size = 14 }) {
   const rounded = Math.round(Number(value) || 0);
   return (
-    <span role="img" aria-label={`${Number(value || 0).toFixed(1)} out of 5 stars`} style={{ display: 'inline-flex', gap: 2 }}>
+    <span
+      role="img"
+      aria-label={`${Number(value || 0).toFixed(1)} out of 5 stars`}
+      style={{ display: 'inline-flex', gap: 2 }}
+    >
       {[1, 2, 3, 4, 5].map((s) => (
-        <FiStar key={s} size={size} aria-hidden="true"
-          style={{ color: s <= rounded ? '#f59e0b' : '#d1d5db', fill: s <= rounded ? '#f59e0b' : 'transparent' }} />
+        <FiStar
+          key={s}
+          size={size}
+          aria-hidden="true"
+          style={{ color: s <= rounded ? '#f59e0b' : '#d1d5db', fill: s <= rounded ? '#f59e0b' : 'transparent' }}
+        />
       ))}
     </span>
   );
@@ -22,7 +30,12 @@ export function StarPicker({ value, onChange, size = 28 }) {
   const shown = hover || value;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-      <div role="radiogroup" aria-label="Rating" style={{ display: 'inline-flex', gap: 4 }} onMouseLeave={() => setHover(0)}>
+      <div
+        role="radiogroup"
+        aria-label="Rating"
+        style={{ display: 'inline-flex', gap: 4 }}
+        onMouseLeave={() => setHover(0)}
+      >
         {[1, 2, 3, 4, 5].map((s) => (
           <button
             key={s}
@@ -34,7 +47,10 @@ export function StarPicker({ value, onChange, size = 28 }) {
             onMouseEnter={() => setHover(s)}
             style={{ background: 'none', border: 'none', padding: 2, cursor: 'pointer', lineHeight: 0 }}
           >
-            <FiStar size={size} style={{ color: s <= shown ? '#f59e0b' : '#d1d5db', fill: s <= shown ? '#f59e0b' : 'transparent' }} />
+            <FiStar
+              size={size}
+              style={{ color: s <= shown ? '#f59e0b' : '#d1d5db', fill: s <= shown ? '#f59e0b' : 'transparent' }}
+            />
           </button>
         ))}
       </div>

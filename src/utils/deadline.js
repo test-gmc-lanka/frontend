@@ -6,7 +6,12 @@ function parseLocalDate(value) {
 
 export function formatDeadline(value) {
   if (!value) return '—';
-  return parseLocalDate(value).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+  return parseLocalDate(value).toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
 }
 
 export function todayInputValue() {

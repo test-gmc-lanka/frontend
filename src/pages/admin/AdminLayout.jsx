@@ -1,8 +1,5 @@
 import { NavLink, Outlet } from 'react-router-dom';
-import {
-  FiGrid, FiPackage, FiShoppingBag, FiUsers, FiCalendar,
-  FiMessageSquare, FiTool,
-} from 'react-icons/fi';
+import { FiGrid, FiPackage, FiShoppingBag, FiUsers, FiCalendar, FiMessageSquare, FiTool } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext';
 import Avatar from '../../components/common/Avatar';
 
@@ -24,12 +21,33 @@ export default function AdminLayout() {
       {/* Sidebar */}
       <aside className="admin-sidebar">
         <div style={{ padding: '0 1.5rem 1rem', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
+          <div
+            style={{
+              fontSize: '0.75rem',
+              color: 'var(--text-muted)',
+              fontWeight: 600,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              marginBottom: '0.5rem',
+            }}
+          >
             Admin Panel
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
             <Avatar src={user?.profileImageUrl} name={user?.name} size={32} />
-            <div style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--color-primary)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name}</div>
+            <div
+              style={{
+                fontWeight: 600,
+                fontSize: '0.875rem',
+                color: 'var(--color-primary)',
+                minWidth: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {user?.name}
+            </div>
           </div>
         </div>
         <nav style={{ marginTop: '0.75rem' }}>
