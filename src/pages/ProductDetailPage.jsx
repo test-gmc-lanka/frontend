@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 
 /* ── Gallery: cover image first, then the rest in admin order ──────────── */
 function buildGallery(product) {
-  const images = product.imageUrls?.length ? product.imageUrls : (product.imageUrl ? [product.imageUrl] : []);
+  const images = product.imageUrls?.length ? product.imageUrls : product.imageUrl ? [product.imageUrl] : [];
   if (!product.imageUrl || !images.includes(product.imageUrl)) return images;
   return [product.imageUrl, ...images.filter((img) => img !== product.imageUrl)];
 }
@@ -21,7 +21,10 @@ function buildSpecs(product) {
   return [
     product.category?.name && { param: 'Category', spec: product.category.name },
     product.material && { param: 'Material', spec: product.material },
-    { param: 'Availability', spec: (product.stockQuantity || 0) > 0 ? `${product.stockQuantity} in stock` : 'Out of stock' },
+    {
+      param: 'Availability',
+      spec: (product.stockQuantity || 0) > 0 ? `${product.stockQuantity} in stock` : 'Out of stock',
+    },
   ].filter(Boolean);
 }
 
@@ -40,7 +43,9 @@ export default function ProductDetailPage({ onLoginClick }) {
 
   useEffect(() => {
     setReviews(null);
-    getProductReviews(id).then((r) => setReviews(r.data)).catch(() => {});
+    getProductReviews(id)
+      .then((r) => setReviews(r.data))
+      .catch(() => {});
   }, [id]);
 
   useEffect(() => {
@@ -52,7 +57,10 @@ export default function ProductDetailPage({ onLoginClick }) {
   }, [id]);
 
   const handleAddToCart = async () => {
-    if (!user) { onLoginClick(); return; }
+    if (!user) {
+      onLoginClick();
+      return;
+    }
     if (isAdmin || isTechnician) return;
     setAdding(true);
     try {
@@ -66,8 +74,18 @@ export default function ProductDetailPage({ onLoginClick }) {
     }
   };
 
-  if (loading) return <div style={{ background: '#fff', minHeight: '100vh' }}><LoadingSpinner /></div>;
-  if (!product) return <div style={{ background: '#fff', minHeight: '100vh', padding: '2rem', textAlign: 'center' }}>Product not found.</div>;
+  if (loading)
+    return (
+      <div style={{ background: '#fff', minHeight: '100vh' }}>
+        <LoadingSpinner />
+      </div>
+    );
+  if (!product)
+    return (
+      <div style={{ background: '#fff', minHeight: '100vh', padding: '2rem', textAlign: 'center' }}>
+        Product not found.
+      </div>
+    );
 
   const gallery = buildGallery(product);
   const mainImage = gallery[activeThumb] || gallery[0];
@@ -79,19 +97,31 @@ export default function ProductDetailPage({ onLoginClick }) {
 
   return (
     <div style={{ background: '#fff', minHeight: '100vh', color: '#111827' }}>
-
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '2rem 1.5rem' }}>
         <div className="layout-product-hero">
-
           {/* Left — image + thumbnails */}
           <div>
             <div style={{ border: '1px solid #e5e7eb', borderRadius: 4, overflow: 'hidden', marginBottom: '0.75rem' }}>
               {mainImage ? (
-                <img src={mainImage} alt={product.name}
-                  style={{ width: '100%', height: 340, objectFit: 'cover', display: 'block' }} />
+                <img
+                  src={mainImage}
+                  alt={product.name}
+                  style={{ width: '100%', height: 340, objectFit: 'cover', display: 'block' }}
+                />
               ) : (
-                <div style={{ height: 340, background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '4rem' }}>🪵</div>
+                <div
+                  style={{
+                    height: 340,
+                    background: '#f3f4f6',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '4rem',
+                  }}
+                >
+                  🪵
+                </div>
               )}
             </div>
             {/* Thumbnails */}
@@ -106,7 +136,11 @@ export default function ProductDetailPage({ onLoginClick }) {
                     aria-pressed={activeThumb === i}
                     style={{
                       border: activeThumb === i ? '2px solid #1e3a5c' : '1px solid #e5e7eb',
-                      borderRadius: 4, overflow: 'hidden', cursor: 'pointer', padding: 0, background: 'none',
+                      borderRadius: 4,
+                      overflow: 'hidden',
+                      cursor: 'pointer',
+                      padding: 0,
+                      background: 'none',
                     }}
                   >
                     <img src={img} alt="" style={{ width: '100%', height: 72, objectFit: 'cover', display: 'block' }} />
@@ -120,13 +154,28 @@ export default function ProductDetailPage({ onLoginClick }) {
           <div style={{ paddingTop: '1rem' }}>
             {/* In Stock badge */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.1em', color: inStock && !archived ? '#6b7280' : '#ef4444' }}>
+              <span
+                style={{
+                  fontSize: '0.72rem',
+                  fontWeight: 700,
+                  letterSpacing: '0.1em',
+                  color: inStock && !archived ? '#6b7280' : '#ef4444',
+                }}
+              >
                 {archived ? 'NO LONGER AVAILABLE' : inStock ? 'IN STOCK' : 'OUT OF STOCK'}
               </span>
               <div style={{ flex: 1, height: 1, background: '#e5e7eb' }} />
             </div>
 
-            <h1 style={{ fontSize: '1.875rem', fontWeight: 800, color: '#111827', marginBottom: '0.6rem', lineHeight: 1.2 }}>
+            <h1
+              style={{
+                fontSize: '1.875rem',
+                fontWeight: 800,
+                color: '#111827',
+                marginBottom: '0.6rem',
+                lineHeight: 1.2,
+              }}
+            >
               {product.name}
             </h1>
 
@@ -148,10 +197,16 @@ export default function ProductDetailPage({ onLoginClick }) {
                     onClick={handleAddToCart}
                     disabled={adding}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: '0.5rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
                       background: adding ? '#2d5a8c' : '#1e3a5c',
-                      color: '#fff', border: 'none', borderRadius: 6,
-                      padding: '0.75rem 1.5rem', fontSize: '0.9rem', fontWeight: 600,
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: 6,
+                      padding: '0.75rem 1.5rem',
+                      fontSize: '0.9rem',
+                      fontWeight: 600,
                       cursor: adding ? 'not-allowed' : 'pointer',
                     }}
                   >
@@ -161,12 +216,18 @@ export default function ProductDetailPage({ onLoginClick }) {
                   </button>
                 ) : null}
                 <button
-                  onClick={() => user ? navigate('/appointments') : onLoginClick()}
+                  onClick={() => (user ? navigate('/appointments') : onLoginClick())}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: '0.5rem',
-                    background: isQuote ? '#1e3a5c' : 'transparent', color: isQuote ? '#fff' : '#1e3a5c',
-                    border: '1.5px solid #1e3a5c', borderRadius: 6,
-                    padding: '0.75rem 1.5rem', fontSize: '0.9rem', fontWeight: 600,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    background: isQuote ? '#1e3a5c' : 'transparent',
+                    color: isQuote ? '#fff' : '#1e3a5c',
+                    border: '1.5px solid #1e3a5c',
+                    borderRadius: 6,
+                    padding: '0.75rem 1.5rem',
+                    fontSize: '0.9rem',
+                    fontWeight: 600,
                     cursor: 'pointer',
                   }}
                 >
@@ -184,23 +245,37 @@ export default function ProductDetailPage({ onLoginClick }) {
       {/* ── Description + Specs ───────────────────────────────────────────── */}
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '3rem 1.5rem' }}>
         <div className="layout-two-col">
-
           {/* Product Description */}
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', marginBottom: '1rem' }}>Product Description</h2>
-            <p style={{ color: product.description ? '#4b5563' : '#9ca3af', lineHeight: 1.75, fontSize: '0.9rem', whiteSpace: 'pre-wrap' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', marginBottom: '1rem' }}>
+              Product Description
+            </h2>
+            <p
+              style={{
+                color: product.description ? '#4b5563' : '#9ca3af',
+                lineHeight: 1.75,
+                fontSize: '0.9rem',
+                whiteSpace: 'pre-wrap',
+              }}
+            >
               {product.description || 'No description has been added for this product yet.'}
             </p>
           </div>
 
           {/* Technical Specifications */}
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', marginBottom: '1rem' }}>Specifications</h2>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', marginBottom: '1rem' }}>
+              Specifications
+            </h2>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem' }}>
               <thead>
                 <tr style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-                  <th style={{ textAlign: 'left', padding: '0.65rem 1rem', fontWeight: 700, color: '#374151' }}>Parameter</th>
-                  <th style={{ textAlign: 'left', padding: '0.65rem 1rem', fontWeight: 700, color: '#374151' }}>Specification</th>
+                  <th style={{ textAlign: 'left', padding: '0.65rem 1rem', fontWeight: 700, color: '#374151' }}>
+                    Parameter
+                  </th>
+                  <th style={{ textAlign: 'left', padding: '0.65rem 1rem', fontWeight: 700, color: '#374151' }}>
+                    Specification
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -221,14 +296,26 @@ export default function ProductDetailPage({ onLoginClick }) {
 
       {/* ── Customer Reviews (verified purchases only) ──────────────────────── */}
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '3rem 1.5rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: '1rem',
+            flexWrap: 'wrap',
+            gap: '1rem',
+          }}
+        >
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', marginBottom: '0.4rem' }}>Customer Reviews</h2>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#111827', marginBottom: '0.4rem' }}>
+              Customer Reviews
+            </h2>
             {reviews && reviews.reviewCount > 0 ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Stars value={reviews.averageRating} size={16} />
                 <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>
-                  {Number(reviews.averageRating).toFixed(1)} out of 5 · {reviews.reviewCount} review{reviews.reviewCount !== 1 ? 's' : ''}
+                  {Number(reviews.averageRating).toFixed(1)} out of 5 · {reviews.reviewCount} review
+                  {reviews.reviewCount !== 1 ? 's' : ''}
                 </span>
               </div>
             ) : (
@@ -239,10 +326,20 @@ export default function ProductDetailPage({ onLoginClick }) {
             Bought this? You can review it from your delivered order in{' '}
             <button
               onClick={() => (user ? navigate('/orders') : onLoginClick())}
-              style={{ background: 'none', border: 'none', padding: 0, color: '#1e3a5c', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline', fontSize: 'inherit' }}
+              style={{
+                background: 'none',
+                border: 'none',
+                padding: 0,
+                color: '#1e3a5c',
+                fontWeight: 700,
+                cursor: 'pointer',
+                textDecoration: 'underline',
+                fontSize: 'inherit',
+              }}
             >
               My Orders
-            </button>.
+            </button>
+            .
           </div>
         </div>
 
@@ -250,27 +347,62 @@ export default function ProductDetailPage({ onLoginClick }) {
         {reviews && reviews.reviewCount > 0 ? (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
             {reviews.reviews.map((r) => (
-              <div key={r.reviewId} style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '1.25rem', background: '#fff' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+              <div
+                key={r.reviewId}
+                style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: '1.25rem', background: '#fff' }}
+              >
+                <div
+                  style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    marginBottom: '0.5rem',
+                  }}
+                >
                   <span style={{ fontWeight: 700, fontSize: '0.9rem', color: '#111827' }}>{r.reviewerName}</span>
                   <Stars value={r.rating} size={13} />
                 </div>
                 <div style={{ fontSize: '0.72rem', color: '#9ca3af', marginBottom: '0.6rem' }}>
-                  {r.verifiedPurchase && <span style={{ color: '#15803d', fontWeight: 700 }}>✓ Verified purchase · </span>}
-                  {new Date(r.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}
+                  {r.verifiedPurchase && (
+                    <span style={{ color: '#15803d', fontWeight: 700 }}>✓ Verified purchase · </span>
+                  )}
+                  {new Date(r.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                  })}
                   {r.edited && ' · Edited'}
                 </div>
-                <p style={{ fontSize: '0.85rem', color: '#4b5563', lineHeight: 1.65, margin: 0, whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{r.comment}</p>
+                <p
+                  style={{
+                    fontSize: '0.85rem',
+                    color: '#4b5563',
+                    lineHeight: 1.65,
+                    margin: 0,
+                    whiteSpace: 'pre-wrap',
+                    overflowWrap: 'anywhere',
+                  }}
+                >
+                  {r.comment}
+                </p>
               </div>
             ))}
           </div>
         ) : (
-          <div style={{ border: '1px dashed #e5e7eb', borderRadius: 8, padding: '2rem', textAlign: 'center', color: '#9ca3af', fontSize: '0.9rem' }}>
+          <div
+            style={{
+              border: '1px dashed #e5e7eb',
+              borderRadius: 8,
+              padding: '2rem',
+              textAlign: 'center',
+              color: '#9ca3af',
+              fontSize: '0.9rem',
+            }}
+          >
             Be the first to review this product after your order is delivered.
           </div>
         )}
       </div>
-
     </div>
   );
 }

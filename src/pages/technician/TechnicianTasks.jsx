@@ -15,8 +15,9 @@ const TASK_STATUSES = ['ASSIGNED', 'IN_PROGRESS', 'COMPLETED'];
 // Unfinished tasks first, ordered by deadline (soonest / overdue at the top)
 function sortTasks(tasks) {
   const rank = (t) => (t.status === 'COMPLETED' ? 1 : 0);
-  return [...tasks].sort((a, b) => rank(a) - rank(b)
-    || (a.deadline || '9999-12-31').localeCompare(b.deadline || '9999-12-31'));
+  return [...tasks].sort(
+    (a, b) => rank(a) - rank(b) || (a.deadline || '9999-12-31').localeCompare(b.deadline || '9999-12-31'),
+  );
 }
 
 export default function TechnicianTasks() {
@@ -27,12 +28,15 @@ export default function TechnicianTasks() {
   const [updatingId, setUpdatingId] = useState(null);
 
   const fetchTasks = () =>
-    api.get('/technician/tasks')
+    api
+      .get('/technician/tasks')
       .then((r) => setTasks(r.data))
       .catch(() => toast.error('Failed to load tasks'))
       .finally(() => setLoading(false));
 
-  useEffect(() => { fetchTasks(); }, []);
+  useEffect(() => {
+    fetchTasks();
+  }, []);
 
   const handleStatusChange = async (id, status) => {
     setUpdatingId(id);
@@ -57,17 +61,27 @@ export default function TechnicianTasks() {
       <div className="container">
         <div className="page-header flex justify-between items-center">
           <div>
-            <h1 className="page-title flex items-center gap-3"><FiTool /> My Tasks</h1>
+            <h1 className="page-title flex items-center gap-3">
+              <FiTool /> My Tasks
+            </h1>
             <p className="page-subtitle">Manage assigned maintenance tasks</p>
           </div>
-          <button className="btn btn-ghost btn-sm" onClick={() => { setLoading(true); fetchTasks(); }}>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => {
+              setLoading(true);
+              fetchTasks();
+            }}
+          >
             <FiRefreshCw size={14} /> Refresh
           </button>
         </div>
 
         {tasks.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-state-icon"><FiTool /></div>
+            <div className="empty-state-icon">
+              <FiTool />
+            </div>
             <h3>No tasks assigned</h3>
             <p>Check back later for new assignments</p>
           </div>
@@ -79,15 +93,30 @@ export default function TechnicianTasks() {
                   <div style={{ flex: 1 }}>
                     <div className="flex items-center gap-3 mb-1">
                       <span style={{ fontWeight: 700 }}>Task #{task.maintenanceId}</span>
-                      <span className={`badge ${task.status === 'COMPLETED' ? 'badge-delivered' : task.status === 'IN_PROGRESS' ? 'badge-processing' : 'badge-pending'}`}>
+                      <span
+                        className={`badge ${task.status === 'COMPLETED' ? 'badge-delivered' : task.status === 'IN_PROGRESS' ? 'badge-processing' : 'badge-pending'}`}
+                      >
                         {task.status || 'ASSIGNED'}
                       </span>
                       {(() => {
                         const info = deadlineInfo(task.deadline, task.status);
-                        return info && (
-                          <span title={`Deadline: ${formatDeadline(task.deadline)}`} style={{ background: info.bg, color: info.color, fontSize: '0.72rem', fontWeight: 700, padding: '2px 10px', borderRadius: 20, whiteSpace: 'nowrap' }}>
-                            {info.label}
-                          </span>
+                        return (
+                          info && (
+                            <span
+                              title={`Deadline: ${formatDeadline(task.deadline)}`}
+                              style={{
+                                background: info.bg,
+                                color: info.color,
+                                fontSize: '0.72rem',
+                                fontWeight: 700,
+                                padding: '2px 10px',
+                                borderRadius: 20,
+                                whiteSpace: 'nowrap',
+                              }}
+                            >
+                              {info.label}
+                            </span>
+                          )
                         );
                       })()}
                     </div>
@@ -95,10 +124,18 @@ export default function TechnicianTasks() {
                       {task.description}
                     </p>
                     <div className="flex gap-4" style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                      {task.productName
-                        ? <span>Product: <strong style={{ color: 'var(--text-primary)' }}>{task.productName}</strong></span>
-                        : <span>Custom design: <strong style={{ color: 'var(--text-primary)' }}>{task.title}</strong></span>}
-                      <span>Cost: <strong style={{ color: 'var(--color-primary)' }}>{formatLKR(task.cost)}</strong></span>
+                      {task.productName ? (
+                        <span>
+                          Product: <strong style={{ color: 'var(--text-primary)' }}>{task.productName}</strong>
+                        </span>
+                      ) : (
+                        <span>
+                          Custom design: <strong style={{ color: 'var(--text-primary)' }}>{task.title}</strong>
+                        </span>
+                      )}
+                      <span>
+                        Cost: <strong style={{ color: 'var(--color-primary)' }}>{formatLKR(task.cost)}</strong>
+                      </span>
                     </div>
                     {task.imageUrls?.length > 0 && (
                       <div style={{ marginTop: '0.75rem' }}>
@@ -111,7 +148,14 @@ export default function TechnicianTasks() {
                               <img
                                 src={url}
                                 alt={`Reference ${i + 1} for task #${task.maintenanceId}`}
-                                style={{ width: 88, height: 88, objectFit: 'cover', borderRadius: 8, border: '1px solid var(--border)', display: 'block' }}
+                                style={{
+                                  width: 88,
+                                  height: 88,
+                                  objectFit: 'cover',
+                                  borderRadius: 8,
+                                  border: '1px solid var(--border)',
+                                  display: 'block',
+                                }}
                               />
                             </a>
                           ))}
@@ -125,29 +169,47 @@ export default function TechnicianTasks() {
                       style={{ padding: '0.375rem 0.5rem', fontSize: '0.8rem' }}
                       value={task.status || 'ASSIGNED'}
                       disabled={updatingId === task.maintenanceId || task.status === 'COMPLETED'}
-                      onChange={(e) => (e.target.value === 'COMPLETED'
-                        ? setConfirmComplete(task)
-                        : handleStatusChange(task.maintenanceId, e.target.value))}
+                      onChange={(e) =>
+                        e.target.value === 'COMPLETED'
+                          ? setConfirmComplete(task)
+                          : handleStatusChange(task.maintenanceId, e.target.value)
+                      }
                       aria-label={`Status of task #${task.maintenanceId}`}
                     >
-                      {TASK_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                      {TASK_STATUSES.map((s) => (
+                        <option key={s} value={s}>
+                          {s}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 </div>
               </div>
             ))}
-            <Pagination page={safePage} totalItems={sortedTasks.length} pageSize={PAGE_SIZE}
-              onPageChange={setPage} itemLabel="tasks"
-              style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12 }} />
+            <Pagination
+              page={safePage}
+              totalItems={sortedTasks.length}
+              pageSize={PAGE_SIZE}
+              onPageChange={setPage}
+              itemLabel="tasks"
+              style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: 12 }}
+            />
           </div>
         )}
       </div>
       {confirmComplete && (
         <ConfirmDialog
           title="Mark this task completed?"
-          message={<>Task #{confirmComplete.maintenanceId} will be closed and the admin notified. This can&rsquo;t be undone.</>}
+          message={
+            <>
+              Task #{confirmComplete.maintenanceId} will be closed and the admin notified. This can&rsquo;t be undone.
+            </>
+          }
           confirmLabel="Mark completed"
-          onConfirm={() => { handleStatusChange(confirmComplete.maintenanceId, 'COMPLETED'); setConfirmComplete(null); }}
+          onConfirm={() => {
+            handleStatusChange(confirmComplete.maintenanceId, 'COMPLETED');
+            setConfirmComplete(null);
+          }}
           onCancel={() => setConfirmComplete(null)}
         />
       )}

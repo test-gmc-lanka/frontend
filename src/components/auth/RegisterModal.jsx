@@ -5,8 +5,7 @@ import { useAuth } from '../../context/AuthContext';
 import { getErrorMessage } from '../../utils/formatters';
 import toast from 'react-hot-toast';
 
-const BG_IMAGE =
-  'https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?w=1920&q=60&auto=format&fit=crop';
+const BG_IMAGE = 'https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?w=1920&q=60&auto=format&fit=crop';
 
 export default function RegisterModal({ onClose, onRegistered, onSwitchToLogin }) {
   const { login } = useAuth();
@@ -17,7 +16,8 @@ export default function RegisterModal({ onClose, onRegistered, onSwitchToLogin }
   useEffect(() => {
     const style = document.createElement('style');
     style.id = 'reg-input-focus';
-    style.textContent = '.reg-input:focus { border-color: #1e3a5c !important; box-shadow: 0 0 0 3px rgba(30,58,92,0.12) !important; outline: none !important; }';
+    style.textContent =
+      '.reg-input:focus { border-color: #1e3a5c !important; box-shadow: 0 0 0 3px rgba(30,58,92,0.12) !important; outline: none !important; }';
     document.head.appendChild(style);
     return () => document.getElementById('reg-input-focus')?.remove();
   }, []);
@@ -36,7 +36,8 @@ export default function RegisterModal({ onClose, onRegistered, onSwitchToLogin }
       const { data } = await apiRegister({ name: form.name, email: form.email, password: form.password });
       login(data);
       toast.success(`Account created! Welcome, ${data.name}!`);
-      if (onRegistered) onRegistered(data); else onClose();
+      if (onRegistered) onRegistered(data);
+      else onClose();
     } catch (err) {
       if (err.code === 'ERR_NETWORK' || err.message?.includes('Network')) {
         setError('We can\u2019t reach GMC Lanka right now. Please check your connection and try again.');
@@ -51,19 +52,39 @@ export default function RegisterModal({ onClose, onRegistered, onSwitchToLogin }
   };
 
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onClose(); };
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
 
   return (
-    <div style={overlayStyle} role="dialog" aria-modal="true" aria-label="Create an account"
-      onClick={(e) => e.target === e.currentTarget && onClose()}>
+    <div
+      style={overlayStyle}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Create an account"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
       <button
         type="button"
         onClick={onClose}
         aria-label="Close"
-        style={{ position: 'absolute', top: 16, right: 16, zIndex: 2, width: 36, height: 36, borderRadius: '50%', border: '1px solid #e5e7eb', background: '#fff', cursor: 'pointer', fontSize: '1.1rem', color: '#374151' }}
+        style={{
+          position: 'absolute',
+          top: 16,
+          right: 16,
+          zIndex: 2,
+          width: 36,
+          height: 36,
+          borderRadius: '50%',
+          border: '1px solid #e5e7eb',
+          background: '#fff',
+          cursor: 'pointer',
+          fontSize: '1.1rem',
+          color: '#374151',
+        }}
       >
         ✕
       </button>
@@ -89,14 +110,14 @@ export default function RegisterModal({ onClose, onRegistered, onSwitchToLogin }
         <h1 style={titleStyle}>Welcome to GMC LANKA</h1>
         <p style={subtitleStyle}>Enter your technical credentials to get services today.</p>
 
-        {error && (
-          <div style={errorStyle}>{error}</div>
-        )}
+        {error && <div style={errorStyle}>{error}</div>}
 
         <form onSubmit={handleSubmit} autoComplete="off">
           {/* Full Name */}
           <div style={fieldGroupStyle}>
-            <label htmlFor="reg-name" style={labelStyle}>FULL NAME</label>
+            <label htmlFor="reg-name" style={labelStyle}>
+              FULL NAME
+            </label>
             <div style={inputWrapStyle}>
               <FiUser size={15} style={iconStyle} />
               <input
@@ -114,7 +135,9 @@ export default function RegisterModal({ onClose, onRegistered, onSwitchToLogin }
 
           {/* Email */}
           <div style={fieldGroupStyle}>
-            <label htmlFor="reg-email" style={labelStyle}>EMAIL ADDRESS</label>
+            <label htmlFor="reg-email" style={labelStyle}>
+              EMAIL ADDRESS
+            </label>
             <div style={inputWrapStyle}>
               <FiMail size={15} style={iconStyle} />
               <input
@@ -133,11 +156,13 @@ export default function RegisterModal({ onClose, onRegistered, onSwitchToLogin }
           {/* Password row — 2 columns */}
           <div style={passwordRowStyle}>
             <div style={{ flex: 1 }}>
-              <label htmlFor="reg-password" style={labelStyle}>PASSWORD</label>
+              <label htmlFor="reg-password" style={labelStyle}>
+                PASSWORD
+              </label>
               <div style={inputWrapStyle}>
                 <FiLock size={15} style={iconStyle} />
                 <input
-                id="reg-password"
+                  id="reg-password"
                   type="password"
                   className="reg-input"
                   style={inputStyle}
@@ -150,11 +175,13 @@ export default function RegisterModal({ onClose, onRegistered, onSwitchToLogin }
               </div>
             </div>
             <div style={{ flex: 1 }}>
-              <label htmlFor="reg-confirm" style={labelStyle}>CONFIRM PASSWORD</label>
+              <label htmlFor="reg-confirm" style={labelStyle}>
+                CONFIRM PASSWORD
+              </label>
               <div style={inputWrapStyle}>
                 <FiShield size={15} style={iconStyle} />
                 <input
-                id="reg-confirm"
+                  id="reg-confirm"
                   type="password"
                   className="reg-input"
                   style={inputStyle}
@@ -176,7 +203,9 @@ export default function RegisterModal({ onClose, onRegistered, onSwitchToLogin }
 
         <p style={switchStyle}>
           Already have account ?{' '}
-          <button onClick={onSwitchToLogin} style={switchBtnStyle}>Login</button>
+          <button onClick={onSwitchToLogin} style={switchBtnStyle}>
+            Login
+          </button>
         </p>
       </div>
 
@@ -370,4 +399,3 @@ const footerStyle = {
   fontSize: '0.8rem',
   color: '#4b5563',
 };
-

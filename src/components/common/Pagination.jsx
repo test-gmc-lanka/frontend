@@ -29,8 +29,13 @@ export default function Pagination({ page, totalItems, pageSize, onPageChange, i
     <nav
       aria-label="Pagination"
       style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        flexWrap: 'wrap', gap: '0.75rem', padding: '0.9rem 1.25rem', ...style,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        flexWrap: 'wrap',
+        gap: '0.75rem',
+        padding: '0.9rem 1.25rem',
+        ...style,
       }}
     >
       <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
@@ -40,15 +45,17 @@ export default function Pagination({ page, totalItems, pageSize, onPageChange, i
         <PageButton onClick={() => onPageChange(page - 1)} disabled={page === 1} label="Previous page">
           <FiChevronLeft size={16} />
         </PageButton>
-        {getPageItems(page, totalPages).map((item, i) => (
+        {getPageItems(page, totalPages).map((item, i) =>
           item === '…' ? (
-            <span key={`gap-${i}`} style={{ width: 20, textAlign: 'center', color: '#9ca3af', fontSize: '0.85rem' }}>…</span>
+            <span key={`gap-${i}`} style={{ width: 20, textAlign: 'center', color: '#9ca3af', fontSize: '0.85rem' }}>
+              …
+            </span>
           ) : (
             <PageButton key={item} onClick={() => onPageChange(item)} active={item === page} label={`Page ${item}`}>
               {item}
             </PageButton>
-          )
-        ))}
+          ),
+        )}
         <PageButton onClick={() => onPageChange(page + 1)} disabled={page === totalPages} label="Next page">
           <FiChevronRight size={16} />
         </PageButton>
@@ -66,13 +73,19 @@ function PageButton({ children, onClick, disabled, active, label }) {
       aria-label={label}
       aria-current={active ? 'page' : undefined}
       style={{
-        minWidth: 32, height: 32, padding: '0 6px', borderRadius: 6,
+        minWidth: 32,
+        height: 32,
+        padding: '0 6px',
+        borderRadius: 6,
         border: active ? '1px solid #0f766e' : '1px solid #e5e7eb',
         background: active ? '#0f766e' : '#fff',
         color: active ? '#fff' : disabled ? '#d1d5db' : '#374151',
-        fontSize: '0.85rem', fontWeight: active ? 600 : 500,
+        fontSize: '0.85rem',
+        fontWeight: active ? 600 : 500,
         cursor: disabled ? 'not-allowed' : 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
       }}
     >
       {children}

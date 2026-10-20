@@ -9,8 +9,7 @@ export const adminGetDesigns = () => api.get('/admin/custom-designs');
 export const adminUpdateDesignStatus = (id, status) =>
   api.patch(`/admin/custom-designs/${id}/status`, null, { params: { status } });
 export const adminGetInvoices = () => api.get('/admin/invoices');
-export const adminGenerateInvoice = (orderId) =>
-  api.post(`/admin/invoices/orders/${orderId}`);
+export const adminGenerateInvoice = (orderId) => api.post(`/admin/invoices/orders/${orderId}`);
 export const adminGetMaintenance = () => api.get('/admin/maintenance');
 export const adminAssignMaintenance = (data) => api.post('/admin/maintenance', data);
 export const adminCreateCategory = (data) => api.post('/admin/categories', data);

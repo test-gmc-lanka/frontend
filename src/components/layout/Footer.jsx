@@ -16,18 +16,27 @@ export default function Footer() {
 
           <div className="footer-col">
             <h4>Contact</h4>
-            <a className="footer-contact-item" href={`mailto:${CONTACT.email}`}><FiMail size={16} /> <span>{CONTACT.email}</span></a>
-            <a className="footer-contact-item" href={`tel:${CONTACT.phone.replace(/\s/g, '')}`}><FiPhone size={16} /> <span>{CONTACT.phone}</span></a>
+            <a className="footer-contact-item" href={`mailto:${CONTACT.email}`}>
+              <FiMail size={16} /> <span>{CONTACT.email}</span>
+            </a>
+            <a className="footer-contact-item" href={`tel:${CONTACT.phone.replace(/\s/g, '')}`}>
+              <FiPhone size={16} /> <span>{CONTACT.phone}</span>
+            </a>
             <div className="footer-contact-item">
               <FiMapPin size={16} />
-              <span>{CONTACT.addressLines.map((line, i) => <span key={line}>{i > 0 && <br />}{line}</span>)}</span>
+              <span>
+                {CONTACT.addressLines.map((line, i) => (
+                  <span key={line}>
+                    {i > 0 && <br />}
+                    {line}
+                  </span>
+                ))}
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="footer-bottom">
-          © {new Date().getFullYear()} GMC Lanka. Engineered for Excellence.
-        </div>
+        <div className="footer-bottom">© {new Date().getFullYear()} GMC Lanka. Engineered for Excellence.</div>
       </div>
     </footer>
   );
