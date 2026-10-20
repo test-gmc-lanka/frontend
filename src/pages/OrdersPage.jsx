@@ -75,13 +75,13 @@ export default function OrdersPage() {
 
   if (loading)
     return (
-      <div style={{ background: '#eef2f7', minHeight: '100vh' }}>
+      <div style={{ background: 'var(--page-bg)', minHeight: '100vh' }}>
         <LoadingSpinner />
       </div>
     );
 
   return (
-    <div style={{ background: '#eef2f7', minHeight: '100vh', color: '#111827' }}>
+    <div style={{ background: 'var(--page-bg)', minHeight: '100vh', color: '#111827' }}>
       <div style={{ maxWidth: 1120, margin: '0 auto', padding: '2.5rem 1.5rem' }}>
         {/* ── Breadcrumb ────────────────────────────────────────────────── */}
         <div
@@ -97,7 +97,7 @@ export default function OrdersPage() {
             ACCOUNT
           </Link>
           <span style={{ margin: '0 0.4rem' }}>›</span>
-          <span style={{ color: '#1e3a5c' }}>ORDERS</span>
+          <span style={{ color: 'var(--brand)' }}>ORDERS</span>
         </div>
 
         {/* ── Page header ───────────────────────────────────────────────── */}
@@ -164,9 +164,9 @@ export default function OrdersPage() {
               {statusFilter ? 'Try a different status filter' : 'Start shopping to see your orders here'}
             </div>
             <button
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/products')}
               style={{
-                background: '#1e3a5c',
+                background: 'var(--brand)',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 6,
@@ -211,7 +211,7 @@ export default function OrdersPage() {
                     >
                       {/* Order ID */}
                       <td style={{ padding: '1.125rem 1.25rem' }}>
-                        <span style={{ fontWeight: 700, color: '#1e3a5c', fontSize: '0.9rem' }}>
+                        <span style={{ fontWeight: 700, color: 'var(--brand)', fontSize: '0.9rem' }}>
                           {formatOrderNo(order.orderId)}
                         </span>
                       </td>
@@ -244,7 +244,7 @@ export default function OrdersPage() {
                             background: 'none',
                             border: 'none',
                             cursor: 'pointer',
-                            color: '#1e3a5c',
+                            color: 'var(--brand)',
                             fontWeight: 600,
                             fontSize: '0.875rem',
                             display: 'flex',

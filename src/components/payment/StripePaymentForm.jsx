@@ -25,7 +25,7 @@ export default function StripePaymentForm({ orderId, clientSecret, publishableKe
         clientSecret,
         appearance: {
           theme: 'stripe',
-          variables: { colorPrimary: '#0f766e', borderRadius: '8px', fontFamily: 'inherit' },
+          variables: { colorPrimary: '#8a5a32', borderRadius: '8px', fontFamily: 'inherit' },
         },
       }}
     >
@@ -95,7 +95,7 @@ function PaymentFormInner({ orderId, amount, onPaid }) {
           padding: '0.875rem',
           border: 'none',
           borderRadius: 8,
-          background: '#0f3460',
+          background: 'var(--brand)',
           color: '#fff',
           fontWeight: 700,
           fontSize: '0.95rem',

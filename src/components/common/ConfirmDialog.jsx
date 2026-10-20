@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { FiAlertTriangle, FiHelpCircle } from 'react-icons/fi';
 
 const TONES = {
-  primary: { button: '#0f766e', iconBg: '#e6f4f1', icon: '#0f766e' },
+  primary: { button: 'var(--brand-accent)', iconBg: 'var(--brand-tint)', icon: 'var(--brand-accent)' },
   danger: { button: '#ef4444', iconBg: '#fee2e2', icon: '#dc2626' },
   warning: { button: '#f59e0b', iconBg: '#fef3c7', icon: '#b45309' },
 };

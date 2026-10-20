@@ -99,7 +99,7 @@ export default function LoginModal({ onClose, onLoggedIn, onSwitchToRegister, on
           style={{
             fontSize: '2rem',
             fontWeight: 800,
-            color: '#0f3460',
+            color: 'var(--brand)',
             marginBottom: '0.4rem',
             lineHeight: 1.2,
           }}
@@ -188,7 +188,7 @@ export default function LoginModal({ onClose, onLoggedIn, onSwitchToRegister, on
             disabled={loading}
             style={{
               width: '100%',
-              background: loading ? '#2d6a8a' : '#0f3460',
+              background: loading ? 'var(--brand-hover)' : 'var(--brand)',
               color: '#fff',
               border: 'none',
               borderRadius: 50,

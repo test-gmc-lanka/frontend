@@ -101,7 +101,7 @@ export default function CartPage() {
               HOME
             </Link>
             <span style={{ color: '#d1d5db' }}>›</span>
-            <span style={{ color: '#0f766e' }}>SHOPPING CART</span>
+            <span style={{ color: 'var(--brand-accent)' }}>SHOPPING CART</span>
           </div>
 
           {/* Page title row */}
@@ -135,9 +135,9 @@ export default function CartPage() {
               <h3 style={{ color: '#374151', fontWeight: 600, marginBottom: '0.5rem' }}>Your cart is empty</h3>
               <p style={{ color: '#9ca3af', marginBottom: '1.5rem' }}>Browse our products and add items to your cart</p>
               <button
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/products')}
                 style={{
-                  background: '#0f766e',
+                  background: 'var(--brand-accent)',
                   color: '#fff',
                   border: 'none',
                   borderRadius: 8,
@@ -221,7 +221,7 @@ export default function CartPage() {
                           style={{
                             fontWeight: 700,
                             fontSize: '1rem',
-                            color: '#0f766e',
+                            color: 'var(--brand-accent)',
                             whiteSpace: 'nowrap',
                             marginLeft: '1rem',
                           }}
@@ -328,7 +328,7 @@ export default function CartPage() {
                 </div>
                 <div style={summaryRowStyle}>
                   <span style={summaryLabel}>Shipping Estimate</span>
-                  <span style={{ fontSize: '0.85rem', color: '#0f766e', fontWeight: 500 }}>
+                  <span style={{ fontSize: '0.85rem', color: 'var(--brand-accent)', fontWeight: 500 }}>
                     Calculated at next step
                   </span>
                 </div>
@@ -358,7 +358,7 @@ export default function CartPage() {
                   onClick={handleCheckout}
                   style={{
                     width: '100%',
-                    background: '#0f3460',
+                    background: 'var(--brand)',
                     color: '#fff',
                     border: 'none',
                     borderRadius: 8,
@@ -378,13 +378,13 @@ export default function CartPage() {
                 </button>
 
                 <button
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/products')}
                   style={{
                     width: '100%',
                     background: 'none',
                     border: 'none',
                     cursor: 'pointer',
-                    color: '#0f766e',
+                    color: 'var(--brand-accent)',
                     fontWeight: 600,
                     fontSize: '0.9rem',
                     padding: '0.4rem',

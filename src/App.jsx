@@ -9,6 +9,9 @@ import RegisterModal from './components/auth/RegisterModal';
 import ForgotPasswordModal from './components/auth/ForgotPasswordModal';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import HomePage from './pages/HomePage';
+import ProductsPage from './pages/ProductsPage';
+import AboutPage from './pages/AboutPage';
+import ContactPage from './pages/ContactPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
@@ -55,6 +58,11 @@ function OrderDetailRoute() {
 function AppRoutes() {
   const [modal, setModal] = useState(null);
   const { isAdmin, isTechnician } = useAuth();
+
+  // Wood colours for the shop; admins and technicians keep the original palette
+  useEffect(() => {
+    document.body.classList.toggle('shop-theme', !isAdmin && !isTechnician);
+  }, [isAdmin, isTechnician]);
 
   const navigate = useNavigate();
   const [returnTo, setReturnTo] = useState(null);
@@ -105,6 +113,9 @@ function AppRoutes() {
       <Routes>
         {/* Public */}
         <Route path="/" element={<HomePage onLoginClick={openLogin} />} />
+        <Route path="/products" element={<ProductsPage onLoginClick={openLogin} />} />
+        <Route path="/about" element={<AboutPage onLoginClick={openLogin} />} />
+        <Route path="/contact" element={<ContactPage />} />
         <Route path="/products/:id" element={<ProductDetailPage onLoginClick={openLogin} />} />
         <Route
           path="/reset-password"

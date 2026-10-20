@@ -163,7 +163,7 @@ export default function CheckoutPage() {
               type="button"
               onClick={() => setReloadKey((k) => k + 1)}
               style={{
-                background: '#0f3460',
+                background: 'var(--brand)',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 8,
@@ -225,18 +225,18 @@ export default function CheckoutPage() {
                     display: 'flex',
                     gap: 10,
                     alignItems: 'flex-start',
-                    background: '#f0fdfa',
+                    background: 'var(--brand-tint)',
                     border: '1px solid #99f6e4',
                     borderRadius: 8,
                     padding: '0.75rem 0.9rem',
                     marginBottom: '1.25rem',
                   }}
                 >
-                  <FiCheckCircle size={18} color="#0f766e" style={{ flexShrink: 0, marginTop: 1 }} />
+                  <FiCheckCircle size={18} color="var(--brand-accent)" style={{ flexShrink: 0, marginTop: 1 }} />
                   <div style={{ fontSize: '0.85rem', color: '#134e4a', lineHeight: 1.5 }}>
                     Order <strong>#{pendingCardOrder.order.orderId}</strong> is reserved for you. Complete the payment
                     to confirm it. You can also pay later from{' '}
-                    <Link to="/orders" style={{ color: '#0f766e', fontWeight: 600 }}>
+                    <Link to="/orders" style={{ color: 'var(--brand-accent)', fontWeight: 600 }}>
                       My Orders
                     </Link>{' '}
                     — unpaid orders are cancelled after 60 minutes.
@@ -383,7 +383,7 @@ export default function CheckoutPage() {
                     padding: '0.95rem',
                     border: 'none',
                     borderRadius: 8,
-                    background: '#0f3460',
+                    background: 'var(--brand)',
                     color: '#fff',
                     fontWeight: 700,
                     fontSize: '1rem',
@@ -525,7 +525,7 @@ export default function CheckoutPage() {
               }}
             >
               <span style={{ fontWeight: 700 }}>Total</span>
-              <span style={{ fontWeight: 800, fontSize: '1.35rem', color: '#0f3460' }}>
+              <span style={{ fontWeight: 800, fontSize: '1.35rem', color: 'var(--brand)' }}>
                 {formatLKR(summary.totalAmount)}
               </span>
             </div>
@@ -562,7 +562,7 @@ function Steps({ current, cardPayment }) {
               display: 'flex',
               alignItems: 'center',
               gap: 8,
-              color: active || done ? '#0f3460' : '#9ca3af',
+              color: active || done ? 'var(--brand)' : '#9ca3af',
               fontWeight: active ? 700 : 500,
             }}
           >
@@ -576,7 +576,7 @@ function Steps({ current, cardPayment }) {
                 justifyContent: 'center',
                 fontSize: '0.72rem',
                 fontWeight: 700,
-                background: active || done ? '#0f3460' : '#e5e7eb',
+                background: active || done ? 'var(--brand)' : '#e5e7eb',
                 color: active || done ? '#fff' : '#6b7280',
               }}
             >
@@ -609,7 +609,7 @@ function Section({ icon, title, children }) {
           fontSize: '1.05rem',
           fontWeight: 700,
           marginBottom: '1rem',
-          color: '#0f3460',
+          color: 'var(--brand)',
         }}
       >
         {icon} {title}
@@ -646,9 +646,9 @@ function PaymentOption({ value, selected, onSelect, disabled, title, description
         gap: '0.75rem',
         alignItems: 'flex-start',
         padding: '0.85rem 1rem',
-        border: `1.5px solid ${selected ? '#0f766e' : '#e5e7eb'}`,
+        border: `1.5px solid ${selected ? 'var(--brand-accent)' : '#e5e7eb'}`,
         borderRadius: 10,
-        background: selected ? '#f0fdfa' : disabled ? '#f9fafb' : '#fff',
+        background: selected ? 'var(--brand-tint)' : disabled ? '#f9fafb' : '#fff',
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.6 : 1,
       }}
@@ -660,7 +660,7 @@ function PaymentOption({ value, selected, onSelect, disabled, title, description
         checked={selected}
         disabled={disabled}
         onChange={() => onSelect(value)}
-        style={{ marginTop: 3, accentColor: '#0f766e' }}
+        style={{ marginTop: 3, accentColor: 'var(--brand-accent)' }}
       />
       <span>
         <span style={{ display: 'block', fontWeight: 700, fontSize: '0.9rem' }}>{title}</span>

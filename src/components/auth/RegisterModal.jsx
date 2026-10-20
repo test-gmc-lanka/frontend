@@ -17,7 +17,7 @@ export default function RegisterModal({ onClose, onRegistered, onSwitchToLogin }
     const style = document.createElement('style');
     style.id = 'reg-input-focus';
     style.textContent =
-      '.reg-input:focus { border-color: #1e3a5c !important; box-shadow: 0 0 0 3px rgba(30,58,92,0.12) !important; outline: none !important; }';
+      '.reg-input:focus { border-color: var(--brand) !important; box-shadow: 0 0 0 3px var(--brand-ring) !important; outline: none !important; }';
     document.head.appendChild(style);
     return () => document.getElementById('reg-input-focus')?.remove();
   }, []);
@@ -267,7 +267,7 @@ const badgeStyle = {
   display: 'inline-flex',
   alignItems: 'center',
   gap: '0.4rem',
-  background: '#1e3a5c',
+  background: 'var(--brand)',
   color: '#fff',
   fontSize: '0.7rem',
   fontWeight: 700,
@@ -280,7 +280,7 @@ const titleStyle = {
   textAlign: 'center',
   fontSize: '2rem',
   fontWeight: 800,
-  color: '#1e3a5c',
+  color: 'var(--brand)',
   marginBottom: '0.5rem',
   lineHeight: 1.2,
 };
@@ -355,7 +355,7 @@ const btnStyle = (loading) => ({
   alignItems: 'center',
   justifyContent: 'center',
   gap: '0.5rem',
-  background: loading ? '#2d5a8c' : '#1e3a5c',
+  background: loading ? 'var(--brand-hover)' : 'var(--brand)',
   color: '#fff',
   border: 'none',
   borderRadius: 6,
@@ -378,7 +378,7 @@ const switchStyle = {
 const switchBtnStyle = {
   background: 'none',
   border: 'none',
-  color: '#1e3a5c',
+  color: 'var(--brand)',
   fontWeight: 700,
   cursor: 'pointer',
   padding: 0,

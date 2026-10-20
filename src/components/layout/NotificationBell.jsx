@@ -6,7 +6,7 @@ import { getNotifications, getUnreadCount, markNotificationRead, markNotificatio
 const POLL_MS = 30000; // check for new notifications every 30 seconds
 
 const TYPE_ICON = {
-  ORDER: { icon: FiShoppingBag, color: '#0f766e', bg: '#e6f4f1' },
+  ORDER: { icon: FiShoppingBag, color: 'var(--brand-accent)', bg: 'var(--brand-tint)' },
   PAYMENT: { icon: FiCreditCard, color: '#15803d', bg: '#dcfce7' },
   APPOINTMENT: { icon: FiCalendar, color: '#1d4ed8', bg: '#dbeafe' },
   MAINTENANCE: { icon: FiTool, color: '#b45309', bg: '#fef3c7' },
@@ -176,7 +176,7 @@ export default function NotificationBell() {
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#0f766e',
+                  color: 'var(--brand-accent)',
                   fontSize: '0.8rem',
                   fontWeight: 600,
                   cursor: 'pointer',
@@ -213,7 +213,7 @@ export default function NotificationBell() {
                       width: '100%',
                       textAlign: 'left',
                       padding: '0.8rem 1rem',
-                      background: n.read ? '#fff' : '#f0fdfa',
+                      background: n.read ? '#fff' : 'var(--brand-tint)',
                       border: 'none',
                       borderBottom: '1px solid #f8fafc',
                       cursor: n.link ? 'pointer' : 'default',
@@ -259,7 +259,7 @@ export default function NotificationBell() {
                           width: 8,
                           height: 8,
                           borderRadius: '50%',
-                          background: '#0f766e',
+                          background: 'var(--brand-accent)',
                           flexShrink: 0,
                           marginTop: 6,
                         }}

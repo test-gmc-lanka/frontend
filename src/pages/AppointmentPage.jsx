@@ -215,7 +215,7 @@ export default function AppointmentPage() {
         >
           {/* Left panel */}
           <div style={{ padding: '2rem', borderRight: '1px solid #e5e7eb' }}>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: '#0f3460', marginBottom: '0.4rem' }}>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--brand)', marginBottom: '0.4rem' }}>
               Book a Visit
             </h1>
             <p style={{ color: '#6b7280', fontSize: '0.9rem', marginBottom: '1.5rem' }}>
@@ -242,7 +242,7 @@ export default function AppointmentPage() {
                       width: 36,
                       height: 36,
                       borderRadius: 8,
-                      background: '#0f3460',
+                      background: 'var(--brand)',
                       color: '#fff',
                       display: 'flex',
                       alignItems: 'center',
@@ -438,7 +438,7 @@ export default function AppointmentPage() {
               type="submit"
               disabled={submitting || uploading}
               style={{
-                background: submitting ? '#2d6a8a' : '#0f3460',
+                background: submitting ? 'var(--brand-hover)' : 'var(--brand)',
                 color: '#fff',
                 border: 'none',
                 borderRadius: 8,
@@ -546,7 +546,7 @@ export default function AppointmentPage() {
                     {/* Description */}
                     {desc && <div style={{ fontSize: '0.8rem', color: '#6b7280', lineHeight: 1.4 }}>{desc}</div>}
                     {apt.categoryName && (
-                      <div style={{ fontSize: '0.72rem', fontWeight: 600, color: '#0f766e' }}>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--brand-accent)' }}>
                         Product line: {apt.categoryName}
                       </div>
                     )}
@@ -563,7 +563,7 @@ export default function AppointmentPage() {
                         marginTop: 'auto',
                       }}
                     >
-                      <FiCalendar size={13} color="#0f766e" />
+                      <FiCalendar size={13} color="var(--brand-accent)" />
                       <span>{formatApptCard(apt.date)}</span>
                     </div>
 
@@ -578,7 +578,7 @@ export default function AppointmentPage() {
                           alignItems: 'center',
                           justifyContent: 'center',
                           gap: 6,
-                          background: '#0f766e',
+                          background: 'var(--brand-accent)',
                           color: '#fff',
                           borderRadius: 6,
                           textDecoration: 'none',
@@ -595,8 +595,8 @@ export default function AppointmentPage() {
                     {apt.adminNote && (
                       <div
                         style={{
-                          background: '#f0fdfa',
-                          borderLeft: '3px solid #0f766e',
+                          background: 'var(--brand-tint)',
+                          borderLeft: '3px solid var(--brand-accent)',
                           borderRadius: '0 6px 6px 0',
                           padding: '0.45rem 0.6rem',
                           fontSize: '0.78rem',
@@ -604,7 +604,9 @@ export default function AppointmentPage() {
                           lineHeight: 1.45,
                         }}
                       >
-                        <div style={{ fontWeight: 700, color: '#0f766e', fontSize: '0.7rem', marginBottom: 2 }}>
+                        <div
+                          style={{ fontWeight: 700, color: 'var(--brand-accent)', fontSize: '0.7rem', marginBottom: 2 }}
+                        >
                           Note from GMC Lanka
                         </div>
                         <div style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' }}>{apt.adminNote}</div>
@@ -716,7 +718,7 @@ const smallBtnPrimary = {
   padding: '0.35rem 0.5rem',
   fontSize: '0.75rem',
   fontWeight: 600,
-  background: '#0f3460',
+  background: 'var(--brand)',
   color: '#fff',
   border: 'none',
   borderRadius: 6,

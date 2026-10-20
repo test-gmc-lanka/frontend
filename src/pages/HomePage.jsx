@@ -1,424 +1,284 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FiShoppingCart, FiPackage } from 'react-icons/fi';
-import { getProducts, getCategories } from '../api/products';
-import { addToCart } from '../api/cart';
+import { FiArrowRight, FiBox, FiPenTool, FiTool, FiCalendar, FiMail } from 'react-icons/fi';
+import { getProducts } from '../api/products';
 import { useAuth } from '../context/AuthContext';
-import { formatLKR, getErrorMessage } from '../utils/formatters';
-import LoadingSpinner from '../components/common/LoadingSpinner';
-import Pagination, { clampPage } from '../components/common/Pagination';
-import toast from 'react-hot-toast';
+import { formatLKR } from '../utils/formatters';
+import SectionHeading from '../components/common/SectionHeading';
+import { cardStyle, iconBoxStyle, stepNumberStyle } from '../utils/contentStyles';
+import heroImage from '../assets/hero-collage.webp';
 
-const PAGE_SIZE = 8;
+const OFFERS = [
+  {
+    icon: FiBox,
+    title: 'Ready-made products',
+    text: 'Furniture, décor and machined parts made in our workshop. Order online and pay by card or cash on delivery.',
+    to: '/products',
+    cta: 'Browse products',
+  },
+  {
+    icon: FiPenTool,
+    title: 'Custom design & consultation',
+    text: 'Bring us a sketch, a photo or just an idea. Book a consultation and we’ll plan the piece with you.',
+    to: '/appointments',
+    cta: 'Book a consultation',
+    needsLogin: true,
+  },
+  {
+    icon: FiTool,
+    title: 'Maintenance & support',
+    text: 'Something not right with your order? Raise it from your order page and our technicians will follow up.',
+    to: '/orders',
+    cta: 'View my orders',
+    needsLogin: true,
+  },
+];
 
-/* ── badge by category name ─────────────────────────────────────────────── */
-// Badges reflect real data only: availability first, otherwise the category
-function getBadge(product) {
-  const stock = product.stockQuantity || 0;
-  if (Number(product.price) === 0) return { text: 'PRICE ON REQUEST', bg: '#1e3a5c' };
-  if (stock === 0) return { text: 'OUT OF STOCK', bg: '#9ca3af' };
-  if (stock <= 5) return { text: `ONLY ${stock} LEFT`, bg: '#b45309' };
-  return product.category?.name ? { text: product.category.name.toUpperCase(), bg: '#0f766e' } : null;
-}
+const STEPS = [
+  { title: 'Choose', text: 'Pick a product, or book a consultation for a custom piece.' },
+  { title: 'Order', text: 'Check out with your delivery details and pay by card or cash on delivery.' },
+  { title: 'We make & pack', text: 'Track every status change from your orders page and by email.' },
+  { title: 'Delivered', text: 'Receive your order, then leave a review to help other customers.' },
+];
 
-/* ── component ──────────────────────────────────────────────────────────── */
 export default function HomePage({ onLoginClick }) {
-  const { user, isAdmin, isTechnician, refreshCart } = useAuth();
+  const { user, isAdmin, isTechnician } = useAuth();
   const navigate = useNavigate();
-
-  const [products, setProducts] = useState([]);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [sort, setSort] = useState('featured');
-  const [page, setPage] = useState(1);
-  const [addingId, setAddingId] = useState(null);
+  const [featured, setFeatured] = useState([]);
 
   useEffect(() => {
-    Promise.all([getProducts(), getCategories()])
-      .then(([pRes, cRes]) => {
-        setProducts(pRes.data);
-        setCategories(cRes.data);
-        setLoadError('');
+    getProducts()
+      .then((r) => {
+        const list = (r.data || []).filter((p) => p.active !== false && p.stockQuantity > 0 && Number(p.price) > 0);
+        setFeatured(list.slice(0, 4));
       })
-      .catch((err) => {
-        const msg =
-          err.code === 'ERR_NETWORK' || err.message?.includes('Network')
-            ? 'We can\u2019t reach GMC Lanka right now. Please check your connection and refresh.'
-            : 'Failed to load products. Please refresh.';
-        setLoadError(msg);
-        toast.error(msg, { duration: 5000 });
-      })
-      .finally(() => setLoading(false));
+      .catch(() => setFeatured([]));
   }, []);
 
-  /* Reset page when filter/sort changes */
-  useEffect(() => {
-    setPage(1);
-  }, [selectedCategory, sort]);
-
-  const filtered = useMemo(() => {
-    let list = products.filter((p) => !selectedCategory || String(p.category?.categoryId) === String(selectedCategory));
-    if (sort === 'price-asc') list = [...list].sort((a, b) => a.price - b.price);
-    if (sort === 'price-desc') list = [...list].sort((a, b) => b.price - a.price);
-    return list;
-  }, [products, selectedCategory, sort]);
-
-  const safePage = clampPage(page, filtered.length, PAGE_SIZE);
-  const paginated = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-
-  const handleAddToCart = async (e, productId) => {
-    e.preventDefault(); // the button sits inside the product link
-    e.stopPropagation();
-    if (!user) {
+  // Customer-only pages ask guests to log in first
+  const go = (to, needsLogin) => {
+    if (needsLogin && !user) {
       onLoginClick();
       return;
     }
-    if (isAdmin || isTechnician) return;
-    setAddingId(productId);
-    try {
-      await addToCart({ productId, quantity: 1 });
-      toast.success('Added to cart!');
-      refreshCart();
-    } catch (err) {
-      toast.error(getErrorMessage(err));
-    } finally {
-      setAddingId(null);
-    }
+    navigate(to);
   };
-
-  if (loading)
-    return (
-      <div style={{ background: '#fff', minHeight: '100vh' }}>
-        <LoadingSpinner />
-      </div>
-    );
+  const isStaff = isAdmin || isTechnician;
 
   return (
-    <div style={{ background: '#fff', minHeight: '100vh', color: '#111827' }}>
-      {/* ── Hero ────────────────────────────────────────────────────────── */}
-      <div style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
-        <div style={{ maxWidth: 1120, margin: '0 auto', padding: '3rem 1.5rem 3.5rem' }}>
-          {loadError && (
-            <div
-              style={{
-                background: '#fef2f2',
-                border: '1px solid #fecaca',
-                color: '#dc2626',
-                borderRadius: 6,
-                padding: '0.75rem 1rem',
-                fontSize: '0.875rem',
-                marginBottom: '1.5rem',
-              }}
-            >
-              ⚠️ {loadError}
-            </div>
-          )}
-          <div
-            style={{
-              fontSize: '0.7rem',
-              fontWeight: 800,
-              letterSpacing: '0.14em',
-              color: '#0f766e',
-              marginBottom: '0.75rem',
-            }}
-          >
-            PRECISION ENGINEERING
-          </div>
-          <h1
-            style={{
-              fontSize: '2.75rem',
-              fontWeight: 800,
-              color: '#111827',
-              marginBottom: '0.875rem',
-              lineHeight: 1.1,
-            }}
-          >
-            Product Catalog
-          </h1>
-          <p style={{ fontSize: '1rem', color: '#6b7280', maxWidth: 560, lineHeight: 1.7 }}>
-            Explore our collection of precision-engineered industrial solutions and handcrafted artisanal wood products,
-            where modern technology meets traditional craftsmanship.
-          </p>
-        </div>
-      </div>
-
-      {/* ── Filters + Grid ──────────────────────────────────────────────── */}
-      <div style={{ maxWidth: 1120, margin: '0 auto', padding: '2rem 1.5rem' }}>
-        {/* Filter bar */}
+    <div style={{ background: '#fff', color: '#1f2328' }}>
+      {/* ── Hero ─────────────────────────────────────────────────────── */}
+      <section className="wood-band">
         <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            marginBottom: '1.75rem',
-            flexWrap: 'wrap',
-            gap: '0.75rem',
-          }}
-        >
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-            <FilterChip active={!selectedCategory} onClick={() => setSelectedCategory('')}>
-              ALL PRODUCTS
-            </FilterChip>
-            {categories.map((c) => (
-              <FilterChip
-                key={c.categoryId}
-                active={String(selectedCategory) === String(c.categoryId)}
-                onClick={() =>
-                  setSelectedCategory(String(selectedCategory) === String(c.categoryId) ? '' : c.categoryId)
-                }
-              >
-                {c.name.toUpperCase()}
-              </FilterChip>
-            ))}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <span style={{ fontSize: '0.875rem', color: '#6b7280' }}>Sort by:</span>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value)}
-              style={{
-                border: '1px solid #d1d5db',
-                borderRadius: 4,
-                padding: '0.35rem 0.75rem',
-                fontSize: '0.875rem',
-                fontWeight: 600,
-                background: '#fff',
-                color: '#111827',
-                cursor: 'pointer',
-              }}
-            >
-              <option value="featured">Featured</option>
-              <option value="price-asc">Price Low → High</option>
-              <option value="price-desc">Price High → Low</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Grid */}
-        {paginated.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '4rem 0', color: '#9ca3af' }}>
-            <FiPackage size={40} style={{ marginBottom: '1rem', display: 'block', margin: '0 auto 1rem' }} />
-            <div style={{ fontSize: '1rem', fontWeight: 600 }}>No products found</div>
-            <div style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>Try a different category or filter</div>
-          </div>
-        ) : (
-          <div className="grid-products">
-            {paginated.map((p) => {
-              const badge = getBadge(p);
-              const isQuote = p.price === 0;
-              return (
-                <Link
-                  key={p.productId}
-                  to={`/products/${p.productId}`}
-                  style={{
-                    display: 'block',
-                    color: 'inherit',
-                    textDecoration: 'none',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 4,
-                    overflow: 'hidden',
-                    background: '#fff',
-                    transition: 'box-shadow 0.2s',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.10)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  {/* Image */}
-                  <div style={{ position: 'relative' }}>
-                    {p.imageUrl ? (
-                      <img
-                        src={p.imageUrl}
-                        alt={p.name}
-                        style={{ width: '100%', height: 200, objectFit: 'cover', display: 'block' }}
-                      />
-                    ) : (
-                      <div
-                        style={{
-                          height: 200,
-                          background: '#f3f4f6',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '3rem',
-                        }}
-                      >
-                        🪵
-                      </div>
-                    )}
-                    {badge && (
-                      <div
-                        style={{
-                          position: 'absolute',
-                          top: '0.5rem',
-                          left: '0.5rem',
-                          background: badge.bg,
-                          color: '#fff',
-                          fontSize: '0.6rem',
-                          fontWeight: 800,
-                          letterSpacing: '0.08em',
-                          padding: '0.2rem 0.55rem',
-                          borderRadius: 2,
-                        }}
-                      >
-                        {badge.text}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Body */}
-                  <div style={{ padding: '0.875rem' }}>
-                    <div
-                      style={{
-                        fontWeight: 700,
-                        fontSize: '0.95rem',
-                        color: '#111827',
-                        marginBottom: '0.35rem',
-                        lineHeight: 1.3,
-                      }}
-                    >
-                      {p.name}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: '0.8rem',
-                        color: '#6b7280',
-                        lineHeight: 1.55,
-                        marginBottom: '0.875rem',
-                        display: '-webkit-box',
-                        WebkitLineClamp: 2,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {p.description}
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <div style={{ fontSize: '1rem', fontWeight: 700, color: '#111827' }}>
-                        {isQuote ? 'Price on request' : formatLKR(p.price)}
-                      </div>
-                      {!isAdmin && !isTechnician && !isQuote && p.stockQuantity > 0 && (
-                        <button
-                          onClick={(e) => handleAddToCart(e, p.productId)}
-                          disabled={addingId === p.productId}
-                          title="Add to cart"
-                          aria-label={`Add ${p.name} to cart`}
-                          style={{
-                            background: addingId === p.productId ? '#2d5a8c' : '#1e3a5c',
-                            color: '#fff',
-                            border: 'none',
-                            borderRadius: 4,
-                            width: 36,
-                            height: 36,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            cursor: addingId === p.productId ? 'not-allowed' : 'pointer',
-                            flexShrink: 0,
-                          }}
-                        >
-                          <FiShoppingCart size={15} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        )}
-
-        {/* Pagination */}
-        {filtered.length > 0 && (
-          <Pagination
-            page={safePage}
-            totalItems={filtered.length}
-            pageSize={PAGE_SIZE}
-            onPageChange={(n) => {
-              setPage(n);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            itemLabel="products"
-            style={{ marginTop: '2rem', padding: '0.9rem 0' }}
-          />
-        )}
-      </div>
-
-      {/* ── Custom CNC Solutions CTA ─────────────────────────────────────── */}
-      <div
-        style={{
-          background: '#f9fafb',
-          borderTop: '1px solid #e5e7eb',
-          borderBottom: '1px solid #e5e7eb',
-          margin: '1rem 0',
-        }}
-      >
-        <div
-          className="layout-split"
-          style={{ maxWidth: 1120, margin: '0 auto', padding: '3rem 1.5rem', alignItems: 'center' }}
+          className="page-wrap hero-grid"
+          style={{ paddingTop: 'clamp(2.5rem, 7vw, 4.5rem)', paddingBottom: 'clamp(3rem, 7vw, 4.5rem)' }}
         >
           <div>
-            <h2 style={{ fontSize: '1.625rem', fontWeight: 800, color: '#111827', marginBottom: '1rem' }}>
-              Custom CNC Solutions
-            </h2>
-            <p style={{ color: '#6b7280', lineHeight: 1.75, fontSize: '0.9rem', marginBottom: '1.5rem' }}>
-              Need something specific? We offer bespoke manufacturing services for both industrial parts and unique
-              furniture pieces, made on our own CNC machines.
-            </p>
-            <button
-              onClick={() => (user ? navigate('/appointments') : onLoginClick())}
+            <div className="eyebrow-label" style={{ color: 'var(--wood-200)', marginBottom: '1rem' }}>
+              CNC machining · Woodwork · Sri Lanka
+            </div>
+            <h1
               style={{
-                background: '#1e3a5c',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 6,
-                padding: '0.75rem 1.5rem',
-                fontSize: '0.875rem',
-                fontWeight: 700,
-                letterSpacing: '0.06em',
-                cursor: 'pointer',
+                fontSize: 'clamp(2rem, 5vw, 3.25rem)',
+                lineHeight: 1.1,
+                fontWeight: 800,
+                maxWidth: 720,
+                color: '#fff8ef',
+                marginBottom: '1.1rem',
               }}
             >
-              REQUEST A QUOTE
-            </button>
+              Wood shaped with care, metal cut with precision.
+            </h1>
+            <p style={{ fontSize: '1.05rem', lineHeight: 1.7, maxWidth: 580, color: '#ead8c0', marginBottom: '2rem' }}>
+              GMC Lanka makes furniture, décor and machined parts on our own CNC machines and finishes them by hand.
+              Shop ready-made pieces or work with us on something custom.
+            </p>
+            <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <Link to="/products" className="btn-steel">
+                Shop products <FiArrowRight />
+              </Link>
+              {!isStaff && (
+                <button
+                  type="button"
+                  className="btn-outline-light"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => go('/appointments', true)}
+                >
+                  <FiCalendar /> Book a consultation
+                </button>
+              )}
+            </div>
           </div>
-          <div style={{ borderRadius: 4, overflow: 'hidden', height: 280 }}>
-            <img
-              src="https://images.unsplash.com/photo-1504917595217-d4dc5ebe6122?w=700&q=70"
-              alt="CNC Machine"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-            />
+          <img
+            src={heroImage}
+            alt="Engraved wooden gifts made by GMC Lanka: a clock, coasters, a music box, a desk organiser and keepsakes"
+            className="hero-image"
+            width={1339}
+            height={844}
+          />
+        </div>
+      </section>
+
+      {/* ── What we offer ───────────────────────────────────────────── */}
+      <section className="page-wrap" style={{ paddingTop: '4rem', paddingBottom: '3.5rem' }}>
+        <SectionHeading eyebrow="What we offer" title="From the catalogue or made to order" />
+        <div className="feature-grid">
+          {OFFERS.map(({ icon: Icon, title, text, to, cta, needsLogin }) => (
+            <div key={title} style={cardStyle}>
+              <div style={iconBoxStyle}>
+                <Icon size={20} />
+              </div>
+              <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '1rem 0 0.5rem' }}>{title}</h3>
+              <p style={{ color: '#5b6168', fontSize: '0.92rem', lineHeight: 1.65, flex: 1 }}>{text}</p>
+              {!(isStaff && needsLogin) && (
+                <button type="button" onClick={() => go(to, needsLogin)} style={linkButtonStyle}>
+                  {cta} <FiArrowRight size={14} />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ── Featured products (only shown when there are some) ──────── */}
+      {featured.length > 0 && (
+        <section
+          style={{ background: 'var(--wood-50)', borderTop: '1px solid #eadfce', borderBottom: '1px solid #eadfce' }}
+        >
+          <div className="page-wrap" style={{ paddingTop: '3.5rem', paddingBottom: '3.5rem' }}>
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'flex-end',
+                gap: '1rem',
+                flexWrap: 'wrap',
+                marginBottom: '1.75rem',
+              }}
+            >
+              <SectionHeading eyebrow="In stock now" title="Featured products" noMargin />
+              <Link to="/products" className="btn-outline-wood">
+                See all products <FiArrowRight />
+              </Link>
+            </div>
+            <div className="grid-products">
+              {featured.map((p) => (
+                <Link key={p.productId} to={`/products/${p.productId}`} style={productCardStyle}>
+                  {p.imageUrl ? (
+                    <img
+                      src={p.imageUrl}
+                      alt={p.name}
+                      style={{ width: '100%', height: 190, objectFit: 'cover', display: 'block' }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        height: 190,
+                        background: '#efe6da',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '2.75rem',
+                      }}
+                    >
+                      🪵
+                    </div>
+                  )}
+                  <div style={{ padding: '0.9rem' }}>
+                    {p.category?.name && (
+                      <div
+                        className="eyebrow-label"
+                        style={{ color: 'var(--wood-400)', fontSize: '0.65rem', marginBottom: '0.3rem' }}
+                      >
+                        {p.category.name}
+                      </div>
+                    )}
+                    <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '0.4rem', lineHeight: 1.3 }}>
+                      {p.name}
+                    </div>
+                    <div style={{ fontWeight: 700, color: 'var(--wood-700)' }}>{formatLKR(p.price)}</div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── How ordering works ──────────────────────────────────────── */}
+      <section className="page-wrap" style={{ paddingTop: '4rem', paddingBottom: '4rem' }}>
+        <SectionHeading eyebrow="How it works" title="Ordering in four steps" />
+        <ol className="steps-grid" style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+          {STEPS.map((s, i) => (
+            <li key={s.title} style={{ ...cardStyle, padding: '1.25rem' }}>
+              <div style={stepNumberStyle}>{i + 1}</div>
+              <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0.85rem 0 0.4rem' }}>{s.title}</h3>
+              <p style={{ color: '#5b6168', fontSize: '0.88rem', lineHeight: 1.6 }}>{s.text}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      {/* ── Call to action ──────────────────────────────────────────── */}
+      <section className="steel-band">
+        <div
+          className="page-wrap"
+          style={{
+            paddingTop: '3rem',
+            paddingBottom: '3rem',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: '1.5rem',
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ maxWidth: 560 }}>
+            <h2 style={{ fontSize: '1.6rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--steel-800)' }}>
+              Have a custom piece in mind?
+            </h2>
+            <p style={{ color: 'var(--steel-600)', lineHeight: 1.65 }}>
+              Tell us what you need. We&apos;ll talk through materials, sizes and price before anything is made.
+            </p>
+          </div>
+          <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+            {!isStaff && (
+              <button type="button" className="btn-wood" onClick={() => go('/appointments', true)}>
+                <FiCalendar /> Book a consultation
+              </button>
+            )}
+            <Link to="/contact" className="btn-outline-wood" style={{ background: 'rgba(255,255,255,0.55)' }}>
+              <FiMail /> Contact us
+            </Link>
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
 
-/* ── Small helper components ────────────────────────────────────────────── */
-function FilterChip({ active, onClick, children }) {
-  return (
-    <button
-      onClick={onClick}
-      style={{
-        background: active ? '#1e3a5c' : 'transparent',
-        color: active ? '#fff' : '#374151',
-        border: `1px solid ${active ? '#1e3a5c' : '#d1d5db'}`,
-        borderRadius: 4,
-        padding: '0.45rem 1rem',
-        fontSize: '0.72rem',
-        fontWeight: 700,
-        letterSpacing: '0.06em',
-        cursor: 'pointer',
-        whiteSpace: 'nowrap',
-      }}
-    >
-      {children}
-    </button>
-  );
-}
+const linkButtonStyle = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  gap: 6,
+  marginTop: '1.1rem',
+  alignSelf: 'flex-start',
+  background: 'none',
+  border: 'none',
+  padding: 0,
+  cursor: 'pointer',
+  color: 'var(--wood-600)',
+  fontFamily: 'inherit',
+  fontWeight: 700,
+  fontSize: '0.9rem',
+};
+
+const productCardStyle = {
+  display: 'block',
+  color: 'inherit',
+  textDecoration: 'none',
+  background: '#fff',
+  border: '1px solid #e7e1d8',
+  borderRadius: 10,
+  overflow: 'hidden',
+};

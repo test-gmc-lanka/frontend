@@ -221,7 +221,7 @@ select {
 .btn-primary:hover:not(:disabled) {
   background: var(--color-primary-dark);
   transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0, 85, 128, 0.25);
+  box-shadow: 0 6px 16px var(--primary-glow);
 }
 .btn-secondary {
   background: var(--bg-secondary);
@@ -311,7 +311,7 @@ select {
   outline: none;
   border-color: var(--color-primary);
   background: #fff;
-  box-shadow: 0 0 0 3px rgba(0, 85, 128, 0.12);
+  box-shadow: 0 0 0 3px var(--focus-ring);
 }
 .form-input::placeholder {
   color: var(--text-muted);
@@ -1168,8 +1168,8 @@ tbody tr:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-@media (max-width: 768px) {
-  /* Phones: the account menu has the same links (orders, appointments, profile) */
+@media (max-width: 960px) {
+  /* Narrow screens: the links move into the menu-button panel */
   .navbar-links {
     display: none !important;
   }
@@ -1179,5 +1179,506 @@ tbody tr:hover {
   .grid-cards-3,
   .form-row-2 {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ── Materials: walnut wood and brushed steel ─────────────────────────── */
+:root {
+  --wood-900: #2e1a0e;
+  --wood-700: #4a2c17;
+  --wood-600: #5c3a20;
+  --wood-400: #8a5a32;
+  --wood-200: #d9b98f;
+  --wood-50: #f7efe4;
+  --steel-800: #2c353d;
+  --steel-600: #56616b;
+  --steel-400: #8a949d;
+  --steel-200: #c9d0d6;
+  --steel-50: #eef1f3;
+  /* Fine vertical grain over a walnut gradient */
+  --wood-grain:
+    repeating-linear-gradient(
+      92deg,
+      rgba(255, 235, 205, 0.05) 0 1px,
+      transparent 1px 7px,
+      rgba(0, 0, 0, 0.07) 7px 8px,
+      transparent 8px 15px
+    ),
+    linear-gradient(180deg, var(--wood-600) 0%, var(--wood-700) 100%);
+  /* Horizontal brushing over a steel gradient */
+  --steel-brushed:
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.35) 0 1px, transparent 1px 3px),
+    linear-gradient(180deg, var(--steel-50) 0%, var(--steel-200) 100%);
+  --steel-trim: linear-gradient(90deg, #7d868e, #e6eaed 30%, #99a2aa 55%, #eef1f3 80%, #848d95);
+  --wood-trim: linear-gradient(90deg, var(--wood-900), var(--wood-400) 35%, var(--wood-600) 65%, var(--wood-400));
+}
+
+/* ── Navigation bar: wood for the shop, brushed steel for staff ──────── */
+.site-nav {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: 66px;
+  --nav-fg: #f6ead9;
+  --nav-muted: #dcc6a8;
+  --nav-accent: #dfe4e8;
+  --nav-panel: var(--wood-700);
+  background-color: var(--wood-700);
+  background-image: var(--wood-grain);
+  box-shadow: 0 2px 10px rgba(46, 26, 14, 0.25);
+  /* icons and borders inside the bar reuse these */
+  --text-secondary: var(--nav-muted);
+  --border-light: rgba(246, 234, 217, 0.45);
+}
+.site-nav::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 3px;
+  background: var(--steel-trim);
+}
+.site-nav--metal {
+  --nav-fg: #1d262e;
+  --nav-muted: #46525d;
+  --nav-accent: var(--wood-600);
+  --nav-panel: var(--steel-50);
+  background-color: var(--steel-200);
+  background-image: var(--steel-brushed);
+  box-shadow: 0 2px 10px rgba(44, 53, 61, 0.18);
+  --border-light: rgba(29, 38, 46, 0.35);
+}
+.site-nav--metal::after {
+  background: var(--wood-trim);
+}
+
+.nav-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--nav-fg);
+  text-decoration: none;
+}
+.nav-role {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--wood-700);
+  color: #f6ead9;
+}
+
+.nav-link {
+  color: var(--nav-muted);
+  font-size: 0.92rem;
+  font-weight: 500;
+  padding: 0.3rem 0;
+  border-bottom: 2px solid transparent;
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+  white-space: nowrap;
+}
+.nav-link:hover {
+  color: var(--nav-fg);
+}
+.nav-link.active {
+  color: var(--nav-fg);
+  font-weight: 600;
+  border-bottom-color: var(--nav-accent);
+}
+.nav-link:focus-visible,
+.nav-menu-btn:focus-visible,
+.nav-btn:focus-visible {
+  outline: 2px solid var(--nav-accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.nav-btn {
+  font: 600 0.85rem var(--font-body);
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.nav-btn--ghost {
+  background: transparent;
+  color: var(--nav-fg);
+  border: 1px solid var(--border-light);
+}
+.nav-btn--ghost:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+/* Brushed-steel button on the wood bar; walnut button on the steel bar */
+.nav-btn--solid {
+  background: linear-gradient(180deg, #f3f5f7, #b9c1c8);
+  color: var(--wood-900);
+  border: 1px solid #8a949d;
+}
+.site-nav--metal .nav-btn--solid {
+  background: linear-gradient(180deg, var(--wood-400), var(--wood-700));
+  color: #f6ead9;
+  border-color: var(--wood-900);
+}
+.nav-text-btn {
+  background: none;
+  border: none;
+  color: var(--nav-muted);
+  font: 500 0.92rem var(--font-body);
+  cursor: pointer;
+}
+.nav-text-btn:hover {
+  color: var(--nav-fg);
+}
+
+.nav-menu-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+  background: transparent;
+  color: var(--nav-fg);
+  cursor: pointer;
+}
+.nav-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 3px);
+  background-color: var(--nav-panel);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+  padding: 0.5rem max(16px, env(safe-area-inset-left, 0px)) 1rem;
+  display: flex;
+  flex-direction: column;
+  z-index: 99;
+}
+.nav-panel .nav-link {
+  padding: 0.75rem 0.25rem;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 1rem;
+}
+.nav-panel .nav-link.active {
+  border-bottom-color: var(--border-light);
+  color: var(--nav-fg);
+  box-shadow: inset 3px 0 0 var(--nav-accent);
+  padding-left: 0.75rem;
+}
+@media (max-width: 960px) {
+  .nav-menu-btn {
+    display: inline-flex;
+  }
+}
+@media (max-width: 480px) {
+  .nav-hide-xs {
+    display: none !important;
+  }
+}
+
+/* ── Content pages (home, about, contact) ─────────────────────────────── */
+.wood-band {
+  background-color: var(--wood-700);
+  background-image: var(--wood-grain);
+  color: #f6ead9;
+  position: relative;
+}
+.steel-band {
+  background-color: var(--steel-200);
+  background-image: var(--steel-brushed);
+  color: var(--steel-800);
+  position: relative;
+}
+.steel-band::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 4px;
+  background: var(--wood-trim);
+}
+.page-wrap {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.eyebrow-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.btn-steel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(180deg, #f3f5f7, #b9c1c8);
+  color: var(--wood-900);
+  border: 1px solid #8a949d;
+  border-radius: 8px;
+  padding: 0.8rem 1.4rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn-steel:hover {
+  background: linear-gradient(180deg, #ffffff, #c7ced4);
+}
+.btn-wood {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(180deg, var(--wood-400), var(--wood-700));
+  color: #f6ead9;
+  border: 1px solid var(--wood-900);
+  border-radius: 8px;
+  padding: 0.8rem 1.4rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+.btn-wood:hover {
+  filter: brightness(1.08);
+}
+.btn-wood:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+.btn-outline-light {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: #f6ead9;
+  border: 1px solid rgba(246, 234, 217, 0.55);
+  border-radius: 8px;
+  padding: 0.8rem 1.4rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+.btn-outline-light:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.btn-outline-wood {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  color: var(--wood-700);
+  border: 1px solid var(--wood-400);
+  border-radius: 8px;
+  padding: 0.8rem 1.4rem;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-decoration: none;
+}
+.btn-outline-wood:hover {
+  background: var(--wood-50);
+}
+.btn-steel:focus-visible,
+.btn-wood:focus-visible,
+.btn-outline-light:focus-visible,
+.btn-outline-wood:focus-visible {
+  outline: 3px solid var(--color-accent);
+  outline-offset: 2px;
+}
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.25rem;
+}
+.steps-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+@media (max-width: 960px) {
+  .feature-grid {
+    grid-template-columns: 1fr;
+  }
+  .steps-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 560px) {
+  .steps-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Logo: on a brushed-steel plate over the wood bar, directly on the steel bar ── */
+.nav-logo-plate {
+  display: inline-flex;
+  align-items: center;
+  height: 50px;
+  padding: 3px 10px;
+  border-radius: 8px;
+  background-color: var(--steel-200);
+  background-image: var(--steel-brushed);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.6),
+    0 1px 3px rgba(0, 0, 0, 0.35);
+}
+.site-nav--metal .nav-logo-plate {
+  background: none;
+  box-shadow: none;
+  padding: 0;
+}
+.nav-logo {
+  height: 44px;
+  width: auto;
+  display: block;
+}
+@media (max-width: 480px) {
+  .nav-logo-plate {
+    height: 44px;
+    padding: 3px 8px;
+  }
+  .nav-logo {
+    height: 38px;
+  }
+}
+
+/* ── Home hero: text left, product collage right (stacked on narrow screens) ── */
+.hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: center;
+}
+.hero-image {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+@media (max-width: 960px) {
+  .hero-grid {
+    grid-template-columns: 1fr;
+  }
+  .hero-image {
+    max-width: 620px;
+  }
+}
+
+/* ── Brand colours: navy/teal by default (admin, technician), walnut on the shop side ── */
+:root {
+  --brand: #1e3a5c;
+  --brand-hover: #2d5a8c;
+  --brand-accent: #0f766e;
+  --brand-tint: #e6f4f1;
+  --brand-ring: rgba(30, 58, 92, 0.12);
+  --page-bg: #eef2f7;
+  --primary-glow: rgba(0, 85, 128, 0.25);
+  --focus-ring: rgba(0, 85, 128, 0.12);
+}
+/* Set on <body> for customers and visitors, so buttons, links and icons match the wood navbar */
+body.shop-theme {
+  --brand: var(--wood-700);
+  --brand-hover: var(--wood-600);
+  --brand-accent: var(--wood-400);
+  --brand-tint: var(--wood-50);
+  --brand-ring: rgba(92, 58, 32, 0.15);
+  --page-bg: #f7f3ee;
+  --primary-glow: rgba(74, 44, 23, 0.25);
+  --focus-ring: rgba(92, 58, 32, 0.15);
+
+  --bg-primary: #f7f3ee;
+  --bg-card: #f6f0e8;
+  --bg-hover: #f1e7da;
+  --color-primary: var(--wood-600);
+  --color-primary-dark: var(--wood-700);
+  --color-primary-light: var(--wood-400);
+  --color-secondary: var(--wood-400);
+  --color-accent: var(--wood-400);
+  --border: #ebe2d6;
+  --border-light: #e0d3c1;
+  --shadow: 0 10px 30px rgba(46, 26, 14, 0.08);
+  --shadow-sm: 0 2px 10px rgba(46, 26, 14, 0.06);
+  --shadow-card: 0 1px 3px rgba(46, 26, 14, 0.06), 0 1px 2px rgba(46, 26, 14, 0.04);
+}
+
+/* ── Footer: walnut a shade lighter than the navbar, same grain, steel trim on top ── */
+.site-footer {
+  position: relative;
+  background-color: #74492a;
+  background-image:
+    repeating-linear-gradient(
+      92deg,
+      rgba(255, 235, 205, 0.05) 0 1px,
+      transparent 1px 7px,
+      rgba(0, 0, 0, 0.07) 7px 8px,
+      transparent 8px 15px
+    ),
+    linear-gradient(180deg, #7d5130 0%, #6b4423 100%);
+  border-top: none;
+  --text-secondary: #ecdcc4;
+  --text-muted: #d9c3a3;
+  --color-primary: #ffffff;
+  --border: rgba(246, 234, 217, 0.22);
+}
+.site-footer::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 3px;
+  background: var(--steel-trim);
+}
+.site-footer .footer-col h4 {
+  color: #fff8ef;
+}
+.site-footer .footer-col a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.footer-logo-plate {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background-color: var(--steel-200);
+  background-image: var(--steel-brushed);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  margin-bottom: 1.1rem;
+}
+
+/* ── Products banner: text left, photo right at the text's height ── */
+.catalog-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 3rem;
+  align-items: center;
+}
+.catalog-hero-img {
+  position: relative;
+  align-self: stretch;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 12px 28px rgba(20, 10, 4, 0.45);
+}
+.catalog-hero-img img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 60%;
+  display: block;
+}
+@media (max-width: 860px) {
+  .catalog-hero {
+    grid-template-columns: 1fr;
+  }
+  .catalog-hero-img {
+    display: none;
   }
 }

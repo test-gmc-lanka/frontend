@@ -170,7 +170,7 @@ export default function OrderDetailPage() {
 
   if (loading)
     return (
-      <div style={{ background: '#eef2f7', minHeight: '100vh' }}>
+      <div style={{ background: 'var(--page-bg)', minHeight: '100vh' }}>
         <LoadingSpinner />
       </div>
     );
@@ -178,7 +178,7 @@ export default function OrderDetailPage() {
     return (
       <div
         style={{
-          background: '#eef2f7',
+          background: 'var(--page-bg)',
           minHeight: '100vh',
           display: 'flex',
           alignItems: 'center',
@@ -197,7 +197,7 @@ export default function OrderDetailPage() {
     order.paymentMethod === 'CARD' && order.paymentStatus !== 'COMPLETED' && order.status !== 'CANCELLED';
 
   return (
-    <div style={{ background: '#eef2f7', minHeight: '100vh', color: '#111827' }}>
+    <div style={{ background: 'var(--page-bg)', minHeight: '100vh', color: '#111827' }}>
       <div style={{ maxWidth: 760, margin: '0 auto', padding: '2.5rem 1.5rem' }}>
         {/* ── Back link ─────────────────────────────────────────────────── */}
         <button
@@ -277,7 +277,7 @@ export default function OrderDetailPage() {
             }}
           >
             <div>
-              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#1e3a5c' }}>Order #{order.orderId}</div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--brand)' }}>Order #{order.orderId}</div>
               <div style={{ fontSize: '0.825rem', color: '#9ca3af', marginTop: '0.25rem' }}>
                 Placed on {formatDate(order.orderDate)}
               </div>
@@ -285,7 +285,7 @@ export default function OrderDetailPage() {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
               <span
                 style={{
-                  background: order.status === 'CANCELLED' ? '#fee2e2' : '#1e3a5c',
+                  background: order.status === 'CANCELLED' ? '#fee2e2' : 'var(--brand)',
                   color: order.status === 'CANCELLED' ? '#b91c1c' : '#fff',
                   fontSize: '0.65rem',
                   fontWeight: 700,
@@ -344,7 +344,7 @@ export default function OrderDetailPage() {
                               style={{
                                 width: 20,
                                 height: 2,
-                                background: done ? '#1e3a5c' : '#d1d5db',
+                                background: done ? 'var(--brand)' : '#d1d5db',
                                 marginRight: -2,
                               }}
                             />
@@ -357,8 +357,8 @@ export default function OrderDetailPage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                background: done ? '#1e3a5c' : '#f3f4f6',
-                                border: `2px solid ${done ? '#1e3a5c' : '#d1d5db'}`,
+                                background: done ? 'var(--brand)' : '#f3f4f6',
+                                border: `2px solid ${done ? 'var(--brand)' : '#d1d5db'}`,
                                 color: done ? '#fff' : '#9ca3af',
                                 fontWeight: 700,
                                 fontSize: '0.875rem',
@@ -379,8 +379,8 @@ export default function OrderDetailPage() {
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',
-                              background: done ? '#1e3a5c' : '#f3f4f6',
-                              border: `2px solid ${done ? '#1e3a5c' : '#d1d5db'}`,
+                              background: done ? 'var(--brand)' : '#f3f4f6',
+                              border: `2px solid ${done ? 'var(--brand)' : '#d1d5db'}`,
                               color: done ? '#fff' : '#9ca3af',
                               fontWeight: 700,
                               fontSize: '0.875rem',
@@ -396,7 +396,7 @@ export default function OrderDetailPage() {
                             letterSpacing: '0.06em',
                             marginTop: '0.5rem',
                             whiteSpace: 'nowrap',
-                            color: active ? '#1e3a5c' : '#9ca3af',
+                            color: active ? 'var(--brand)' : '#9ca3af',
                           }}
                         >
                           {i + 1} {step.label}
@@ -409,7 +409,7 @@ export default function OrderDetailPage() {
                           style={{
                             flex: 1,
                             height: 2,
-                            background: i < stepIndex ? '#1e3a5c' : '#d1d5db',
+                            background: i < stepIndex ? 'var(--brand)' : '#d1d5db',
                             margin: '0 2px',
                             marginBottom: 20,
                           }}
@@ -501,7 +501,7 @@ export default function OrderDetailPage() {
                                 background: 'none',
                                 border: 'none',
                                 padding: 0,
-                                color: '#0f766e',
+                                color: 'var(--brand-accent)',
                                 fontWeight: 700,
                                 fontSize: '0.75rem',
                                 cursor: 'pointer',
@@ -615,7 +615,7 @@ export default function OrderDetailPage() {
                   >
                     SUBTOTAL
                   </div>
-                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#1e3a5c' }}>
+                  <div style={{ fontSize: '1.05rem', fontWeight: 800, color: 'var(--brand)' }}>
                     {formatLKR(item.subtotal)}
                   </div>
                 </div>
@@ -714,7 +714,7 @@ export default function OrderDetailPage() {
                 }}
               >
                 <span style={{ fontSize: '1rem', fontWeight: 700, color: '#111827' }}>Total</span>
-                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#1e3a5c' }}>
+                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--brand)' }}>
                   {formatLKR(order.totalAmount)}
                 </span>
               </div>
@@ -743,7 +743,7 @@ export default function OrderDetailPage() {
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <FiCreditCard size={20} color="#1e3a5c" />
+                <FiCreditCard size={20} color="var(--brand)" />
                 <div>
                   <div style={{ fontSize: '0.65rem', fontWeight: 800, letterSpacing: '0.1em', color: '#9ca3af' }}>
                     PAYMENT
@@ -773,7 +773,7 @@ export default function OrderDetailPage() {
                     onClick={handlePayNow}
                     disabled={startingPayment}
                     style={{
-                      background: '#0f3460',
+                      background: 'var(--brand)',
                       color: '#fff',
                       border: 'none',
                       borderRadius: 8,
@@ -934,7 +934,7 @@ export default function OrderDetailPage() {
               justifyContent: 'center',
             }}
           >
-            <FiHeadphones size={22} color="#1e3a5c" />
+            <FiHeadphones size={22} color="var(--brand)" />
           </div>
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 700, color: '#111827', marginBottom: '0.2rem' }}>
@@ -948,7 +948,7 @@ export default function OrderDetailPage() {
             href={`mailto:${CONTACT.email}?subject=${encodeURIComponent(`Order #${order.orderId}`)}`}
             style={{
               flexShrink: 0,
-              background: '#1e3a5c',
+              background: 'var(--brand)',
               color: '#fff',
               borderRadius: 8,
               padding: '0.7rem 1.4rem',
