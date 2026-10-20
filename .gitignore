@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Test coverage output
+coverage
+
+# Local environment (commit .env.example only)
+.env
+.env.*
+!.env.example
