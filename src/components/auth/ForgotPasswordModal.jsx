@@ -59,8 +59,8 @@ export default function ForgotPasswordModal({ onClose, onBackToLogin }) {
                 width: 52,
                 height: 52,
                 borderRadius: '50%',
-                background: '#e6f4f1',
-                color: '#0f766e',
+                background: 'var(--brand-tint)',
+                color: 'var(--brand-accent)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -137,7 +137,7 @@ export default function ForgotPasswordModal({ onClose, onBackToLogin }) {
 const headingStyle = {
   fontSize: '2rem',
   fontWeight: 800,
-  color: '#0f3460',
+  color: 'var(--brand)',
   marginBottom: '0.4rem',
   lineHeight: 1.2,
 };
@@ -175,7 +175,7 @@ const errorStyle = {
 
 const primaryButtonStyle = (loading) => ({
   width: '100%',
-  background: loading ? '#2d6a8a' : '#0f3460',
+  background: loading ? 'var(--brand-hover)' : 'var(--brand)',
   color: '#fff',
   border: 'none',
   borderRadius: 50,

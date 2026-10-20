@@ -64,7 +64,8 @@ api.interceptors.response.use(
         window.dispatchEvent(new Event('auth:logout'));
         // Only redirect away from protected pages, not public ones like '/'
         const currentPath = window.location.pathname;
-        if (currentPath !== '/' && !currentPath.startsWith('/products')) {
+        const publicPaths = ['/', '/about', '/contact', '/reset-password'];
+        if (!publicPaths.includes(currentPath) && !currentPath.startsWith('/products')) {
           window.location.href = '/';
         }
         return Promise.reject(err);

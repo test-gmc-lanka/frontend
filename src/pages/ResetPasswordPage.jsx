@@ -176,7 +176,8 @@ export default function ResetPasswordPage({ onLoginClick, onForgotPassword }) {
 }
 
 function Message({ icon, tone, title, text, action }) {
-  const colors = tone === 'success' ? { bg: '#e6f4f1', fg: '#0f766e' } : { bg: '#fee2e2', fg: '#dc2626' };
+  const colors =
+    tone === 'success' ? { bg: 'var(--brand-tint)', fg: 'var(--brand-accent)' } : { bg: '#fee2e2', fg: '#dc2626' };
   return (
     <div role="status">
       <div
