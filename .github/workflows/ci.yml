@@ -96,7 +96,7 @@ jobs:
           retention-days: 14
       - name: Upload coverage to Codecov (for the README badge)
         if: ${{ !cancelled() && github.event_name == 'push' }}
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           files: coverage/lcov.info
           token: ${{ secrets.CODECOV_TOKEN }}
