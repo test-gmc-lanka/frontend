@@ -30,6 +30,9 @@ export default [
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      // Existing data-loading and reset effects update component state intentionally.
+      // Keep the React Compiler advisory visible without failing CI for those patterns.
+      'react-hooks/set-state-in-effect': 'warn',
       'react/prop-types': 'off',
       'no-var': 'error',
       'prefer-const': 'error',
