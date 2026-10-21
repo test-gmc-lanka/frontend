@@ -13,6 +13,12 @@ updates:
       dev-dependencies:
         dependency-type: development
         update-types: [minor, patch]
+    ignore:
+      # eslint-plugin-import@2.x peers on eslint <=9; skip v10 until it supports it
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
+      - dependency-name: '@eslint/js'
+        update-types: [version-update:semver-major]
 
   - package-ecosystem: github-actions
     directory: /
