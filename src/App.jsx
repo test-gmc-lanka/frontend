@@ -4,6 +4,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
+import ScrollToTop from './components/common/ScrollToTop';
 import LoginModal from './components/auth/LoginModal';
 import RegisterModal from './components/auth/RegisterModal';
 import ForgotPasswordModal from './components/auth/ForgotPasswordModal';
@@ -85,6 +86,7 @@ function AppRoutes() {
 
   return (
     <>
+      <ScrollToTop />
       <Navbar onLoginClick={openLogin} onRegisterClick={openRegister} />
 
       {modal === 'login' && (

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { FiShoppingCart, FiArrowRight } from 'react-icons/fi';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { FiShoppingCart, FiArrowRight, FiArrowLeft } from 'react-icons/fi';
 import { getProduct, getProductReviews } from '../api/products';
 import { Stars } from '../components/common/StarRating';
 import { addToCart } from '../api/cart';
@@ -8,6 +8,26 @@ import { useAuth } from '../context/AuthContext';
 import { formatLKR, getErrorMessage } from '../utils/formatters';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import toast from 'react-hot-toast';
+
+/* ── Link back to the catalog (also works when the page was opened directly) ── */
+function BackToProducts() {
+  return (
+    <Link
+      to="/products"
+      style={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        color: 'var(--brand)',
+        fontWeight: 600,
+        fontSize: '0.9rem',
+        textDecoration: 'none',
+      }}
+    >
+      <FiArrowLeft size={16} /> Back to products
+    </Link>
+  );
+}
 
 /* ── Gallery: cover image first, then the rest in admin order ──────────── */
 function buildGallery(product) {
@@ -83,7 +103,8 @@ export default function ProductDetailPage({ onLoginClick }) {
   if (!product)
     return (
       <div style={{ background: '#fff', minHeight: '100vh', padding: '2rem', textAlign: 'center' }}>
-        Product not found.
+        <p style={{ marginBottom: '1rem' }}>Product not found.</p>
+        <BackToProducts />
       </div>
     );
 
@@ -98,7 +119,10 @@ export default function ProductDetailPage({ onLoginClick }) {
   return (
     <div style={{ background: '#fff', minHeight: '100vh', color: '#111827' }}>
       {/* ── Hero ──────────────────────────────────────────────────────────── */}
-      <div style={{ maxWidth: 1120, margin: '0 auto', padding: '2rem 1.5rem' }}>
+      <div style={{ maxWidth: 1120, margin: '0 auto', padding: '1.5rem 1.5rem 2rem' }}>
+        <div style={{ marginBottom: '1.25rem' }}>
+          <BackToProducts />
+        </div>
         <div className="layout-product-hero">
           {/* Left — image + thumbnails */}
           <div>
