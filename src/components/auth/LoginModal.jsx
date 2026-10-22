@@ -49,7 +49,7 @@ export default function LoginModal({ onClose, onLoggedIn, onSwitchToRegister, on
         position: 'fixed',
         inset: 0,
         zIndex: 1000,
-        background: 'linear-gradient(135deg, #dde8f2 0%, #c8daea 50%, #d4e4f0 100%)',
+        background: 'linear-gradient(135deg, #f3e6d3 0%, #e6cfae 50%, #efdcc2 100%)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -71,7 +71,7 @@ export default function LoginModal({ onClose, onLoggedIn, onSwitchToRegister, on
               width: c.w,
               height: c.h,
               borderRadius: '50%',
-              background: 'rgba(14, 116, 144, 0.25)',
+              background: 'rgba(92, 58, 32, 0.28)',
               top: c.top,
               bottom: c.bottom,
               left: c.left,
@@ -90,7 +90,7 @@ export default function LoginModal({ onClose, onLoggedIn, onSwitchToRegister, on
           padding: '2.75rem 2.5rem 2.25rem',
           width: '100%',
           maxWidth: 420,
-          boxShadow: '0 8px 40px rgba(0,0,0,0.08)',
+          boxShadow: '0 8px 40px rgba(46, 26, 14, 0.12)',
           position: 'relative',
         }}
       >
@@ -106,7 +106,7 @@ export default function LoginModal({ onClose, onLoggedIn, onSwitchToRegister, on
         >
           Welcome back
         </h2>
-        <p style={{ color: '#8a9ab0', fontSize: '0.9rem', marginBottom: '2rem' }}>
+        <p style={{ color: '#8a6f55', fontSize: '0.9rem', marginBottom: '2rem' }}>
           Enter your credentials to access your account.
         </p>
 
@@ -170,7 +170,7 @@ export default function LoginModal({ onClose, onLoggedIn, onSwitchToRegister, on
               style={{
                 background: 'none',
                 border: 'none',
-                color: '#0e7490',
+                color: 'var(--wood-600)',
                 fontSize: '0.75rem',
                 fontWeight: 700,
                 letterSpacing: '0.06em',
@@ -215,17 +215,17 @@ export default function LoginModal({ onClose, onLoggedIn, onSwitchToRegister, on
         </form>
 
         {/* Divider */}
-        <div style={{ height: 1, background: '#f0f2f5', margin: '1.75rem 0 1.25rem' }} />
+        <div style={{ height: 1, background: '#efe5d8', margin: '1.75rem 0 1.25rem' }} />
 
         {/* Sign Up section */}
         <div style={{ textAlign: 'center' }}>
-          <p style={{ color: '#8a9ab0', fontSize: '0.88rem', marginBottom: '0.85rem' }}>New to &nbsp;GMC LANKA?</p>
+          <p style={{ color: '#8a6f55', fontSize: '0.88rem', marginBottom: '0.85rem' }}>New to &nbsp;GMC LANKA?</p>
           <button
             onClick={onSwitchToRegister}
             style={{
               background: '#fff',
-              border: '1.5px solid #0e7490',
-              color: '#0e7490',
+              border: '1.5px solid var(--wood-600)',
+              color: 'var(--wood-600)',
               borderRadius: 50,
               padding: '0.5rem 2rem',
               fontSize: '0.9rem',
@@ -246,7 +246,7 @@ const labelStyle = {
   display: 'block',
   fontSize: '0.7rem',
   fontWeight: 700,
-  color: '#9ca3af',
+  color: '#8a6f55',
   letterSpacing: '0.08em',
   marginBottom: 6,
 };
@@ -254,11 +254,11 @@ const labelStyle = {
 const inputStyle = {
   width: '100%',
   boxSizing: 'border-box',
-  background: '#f0f4f8',
+  background: '#f6efe6',
   border: 'none',
   outline: 'none',
   borderRadius: 10,
   padding: '0.85rem 1.1rem',
   fontSize: '0.95rem',
-  color: '#1a2a3a',
+  color: '#2e1a0e',
 };

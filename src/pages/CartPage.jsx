@@ -97,8 +97,8 @@ export default function CartPage() {
               letterSpacing: '0.04em',
             }}
           >
-            <Link to="/" style={{ color: '#9ca3af', textDecoration: 'none' }}>
-              HOME
+            <Link to="/products" style={{ color: '#9ca3af', textDecoration: 'none' }}>
+              PRODUCTS
             </Link>
             <span style={{ color: '#d1d5db' }}>›</span>
             <span style={{ color: 'var(--brand-accent)' }}>SHOPPING CART</span>
