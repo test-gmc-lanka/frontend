@@ -54,6 +54,10 @@ export default [
   {
     files: ['**/*.test.{js,jsx}', 'src/test/**'],
     languageOptions: { globals: { ...globals.node } },
+    rules: {
+      // Integration tests from the tests repository import app code through the vitest alias @frontend -> src
+      'import/no-unresolved': ['error', { ignore: ['^@frontend/'] }],
+    },
   },
   {
     files: ['*.config.js'],

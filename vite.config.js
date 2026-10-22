@@ -1,10 +1,21 @@
-import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from 'node:url';
+import { configDefaults, defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
+
+// Integration tests (*.int.test.js) live in the tests repository. Locally it is cloned next to this one
+// (../tests); CI checks it out elsewhere and sets INTEGRATION_TESTS_DIR.
+const integrationTestsDir =
+  process.env.INTEGRATION_TESTS_DIR ?? fileURLToPath(new URL('../tests/frontend', import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    // Tests outside this folder must share this project's packages (e.g. the same axios instance)
+    dedupe: ['axios'],
+  },
   server: {
     port: 5173,
+    fs: { allow: ['.', integrationTestsDir] },
     proxy: {
       '/api': {
         target: 'http://localhost:8081',
@@ -26,6 +37,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: ['./src/test/setup.js'],
+    include: [...configDefaults.include, `${integrationTestsDir.replaceAll('\\', '/')}/**/*.int.test.{js,jsx}`],
+    alias: { '@frontend': fileURLToPath(new URL('./src', import.meta.url)) },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'lcov', 'json-summary'],

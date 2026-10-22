@@ -17,4 +17,7 @@ All notable changes to this project are documented here. The format follows
 
 ### Changed
 
+- Repository layout: the CI/CD pipeline, Dockerfile and nginx config moved to the `infra` repository
+  (`.github/workflows/ci.yml` now calls the shared pipeline there), and the integration tests
+  (`*.int.test.js`) moved to the `tests` repository. Behaviour of every stage is unchanged.
 - Upgraded Vite 5 to Vite 8 to clear a high-severity advisory.

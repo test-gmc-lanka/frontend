@@ -12,7 +12,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest",
-    "test:unit": "vitest run --exclude \"**/*.int.test.*\"",
+    "test:unit": "vitest run --exclude \"**/*.int.test.*\" --exclude \"../**\"",
     "test:integration": "vitest run int.test",
     "test:coverage": "vitest run --coverage"
   },
